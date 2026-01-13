@@ -23,16 +23,16 @@ export default function Home() {
   };
 
   return (
-    // Updated background to solid black
-    <main className="min-h-screen bg-black relative selection:bg-yellow-500/30">
+    // Applied the new Deep Radial Gradient
+    <main className="min-h-screen bg-deep-atmosphere relative selection:bg-white/20">
       <AnimatePresence mode="wait">
         {location && zmanim ? (
           <motion.div
             key="countdown"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
             className="w-full h-full"
           >
             <CountdownDisplay 
@@ -46,8 +46,8 @@ export default function Home() {
             key="selector"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0, scale: 0.98 }}
-            transition={{ duration: 0.4 }}
+            exit={{ opacity: 0, filter: 'blur(10px)' }}
+            transition={{ duration: 0.5 }}
             className="w-full h-full"
           >
             <LocationSelector onLocationFound={handleLocationFound} />

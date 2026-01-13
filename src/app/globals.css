@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --background: #000000;
+  --background: #0f172a;
   --foreground: #ffffff;
 }
 
@@ -11,28 +11,26 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: var(--font-inter), sans-serif;
-  overflow: hidden; /* Immersive feel */
+  overflow: hidden; /* Prevents scrollbars */
 }
 
 @layer utilities {
-  /* The font for the big numbers */
-  .font-clock {
-    font-family: var(--font-inter), sans-serif;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.05em; /* Tight tracking like the screenshot */
+  /* 1. Global Background: Deep Radial Gradient */
+  .bg-deep-atmosphere {
+    background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
   }
 
-  /* The Glowing Sun Orb Effect */
-  .sun-glow {
-    background: radial-gradient(circle, #FFD600 0%, #FFCC00 40%, transparent 70%);
-    box-shadow: 0 0 60px 20px rgba(255, 215, 0, 0.3);
-    filter: blur(8px);
+  /* 2. Clock Font Styling */
+  .font-clock {
+    font-variant-numeric: tabular-nums; /* Prevents jitter */
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
   
-  /* Red glow for urgency */
-  .sun-glow-urgent {
-    background: radial-gradient(circle, #FF4500 0%, #FF0000 40%, transparent 70%);
-    box-shadow: 0 0 60px 20px rgba(255, 69, 0, 0.4);
-    filter: blur(8px);
+  /* 3. Glassmorphism Badge */
+  .glass-badge {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
   }
 }
