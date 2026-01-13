@@ -20,7 +20,7 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
     const [suggestions, setSuggestions] = useState<CityResult[]>([]);
     const [loading, setLoading] = useState(false);
     const [showSuggestions, setShowSuggestions] = useState(false);
-    const searchTimeout = useRef<NodeJS.Timeout>();
+    const searchTimeout = useRef<NodeJS.Timeout | undefined>(undefined);
 
     useEffect(() => {
         if (searchQuery.length < 2) {
@@ -66,7 +66,7 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
     const handleGeolocation = () => {
         setLoading(true);
         if (!navigator.geolocation) return;
-        
+
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 onLocationFound(position.coords.latitude, position.coords.longitude, "Current Location");
@@ -77,8 +77,8 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
 
     return (
         <div className="flex items-center justify-center h-screen bg-black p-4">
-            
-            <motion.div 
+
+            <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="w-full max-w-md"
