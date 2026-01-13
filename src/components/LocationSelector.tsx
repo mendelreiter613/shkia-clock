@@ -62,73 +62,78 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
     };
 
     return (
-        <div className="fixed inset-0 bg-black flex flex-col items-center justify-center p-6">
+        <div className="fixed inset-0 bg-black flex flex-col">
 
-            {/* Logo */}
-            <div className="absolute top-6 left-6 flex items-center gap-2 text-white">
-                <div className="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center">
-                    <div className="w-3 h-3 rounded-full bg-white"></div>
+            {/* Header - Logo */}
+            <div className="p-6">
+                <div className="flex items-center gap-2 text-white">
+                    <div className="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center">
+                        <div className="w-3 h-3 rounded-full bg-white"></div>
+                    </div>
+                    <span className="text-xl font-bold tracking-tight">SHKIA CLOCK</span>
                 </div>
-                <span className="text-xl font-bold tracking-tight">SHKIA CLOCK</span>
             </div>
 
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="w-full max-w-2xl text-center"
-            >
-                {/* Title */}
-                <h1 className="text-5xl md:text-7xl font-bold text-white mb-4 tracking-tight">
-                    Shkia Clock
-                </h1>
-                <p className="text-white/60 text-lg md:text-xl mb-12 tracking-wide">
-                    Track sunset times for your location
-                </p>
-
-                {/* Search Form */}
-                <form onSubmit={handleManualSearch} className="mb-8">
-                    <div className="relative">
-                        <input
-                            type="text"
-                            placeholder="Search city..."
-                            autoFocus
-                            value={manualCity}
-                            onChange={(e) => setManualCity(e.target.value)}
-                            className="w-full bg-white/10 border border-white/20 rounded-full px-6 py-4 pr-12 text-white placeholder-white/40 text-lg focus:outline-none focus:border-white/40 transition-all"
-                        />
-                        <button
-                            type="submit"
-                            disabled={!manualCity || loading}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-3 hover:bg-white/10 rounded-full transition-all disabled:opacity-30"
-                        >
-                            {loading ? <Loader2 className="animate-spin text-white" size={20} /> : <Search className="text-white/60" size={20} />}
-                        </button>
-                    </div>
-                </form>
-
-                {/* Use Location Button */}
-                <button
-                    onClick={handleGeolocation}
-                    disabled={loading}
-                    className="text-white/60 hover:text-white text-sm uppercase tracking-[0.2em] transition-colors disabled:opacity-50"
+            {/* Main Content - Centered */}
+            <div className="flex-1 flex items-center justify-center px-6">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="w-full max-w-2xl text-center"
                 >
-                    Or use my current location
-                </button>
+                    {/* Title */}
+                    <h1 className="text-5xl md:text-7xl font-bold text-white mb-4 tracking-tight">
+                        Shkia Clock
+                    </h1>
+                    <p className="text-white/60 text-lg md:text-xl mb-12 tracking-wide">
+                        Track sunset times for your location
+                    </p>
 
-                {/* Error */}
-                {error && (
-                    <motion.p
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="mt-6 text-red-400 text-sm"
+                    {/* Search Form */}
+                    <form onSubmit={handleManualSearch} className="mb-8">
+                        <div className="relative">
+                            <input
+                                type="text"
+                                placeholder="Search city..."
+                                autoFocus
+                                value={manualCity}
+                                onChange={(e) => setManualCity(e.target.value)}
+                                className="w-full bg-white/10 border border-white/20 rounded-full px-6 py-4 pr-12 text-white placeholder-white/40 text-lg focus:outline-none focus:border-white/40 transition-all"
+                            />
+                            <button
+                                type="submit"
+                                disabled={!manualCity || loading}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-3 hover:bg-white/10 rounded-full transition-all disabled:opacity-30"
+                            >
+                                {loading ? <Loader2 className="animate-spin text-white" size={20} /> : <Search className="text-white/60" size={20} />}
+                            </button>
+                        </div>
+                    </form>
+
+                    {/* Use Location Button */}
+                    <button
+                        onClick={handleGeolocation}
+                        disabled={loading}
+                        className="text-white/60 hover:text-white text-sm uppercase tracking-[0.2em] transition-colors disabled:opacity-50"
                     >
-                        {error}
-                    </motion.p>
-                )}
-            </motion.div>
+                        Or use my current location
+                    </button>
+
+                    {/* Error */}
+                    {error && (
+                        <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="mt-6 text-red-400 text-sm"
+                        >
+                            {error}
+                        </motion.p>
+                    )}
+                </motion.div>
+            </div>
 
             {/* Footer */}
-            <div className="absolute bottom-6 text-center">
+            <div className="p-6 text-center">
                 <p className="text-white/30 text-xs uppercase tracking-[0.2em]">
                     Based on Hebcal Halachic Algorithms
                 </p>
