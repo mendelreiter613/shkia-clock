@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, RefreshCw } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { X } from "lucide-react";
+import { motion } from "framer-motion";
 import { ZmanimData } from "@/lib/zmanim";
 
 interface CountdownDisplayProps {
@@ -16,7 +16,6 @@ function formatTimeLeft(ms: number) {
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
-
     const pad = (n: number) => n.toString().padStart(2, "0");
     return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
 }
@@ -37,122 +36,118 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
     const msToShkia = shkia.getTime() - now.getTime();
     const minutesLeft = msToShkia / 1000 / 60;
 
-    // --- Sun Position Logic ---
+    // Calculate sun position
     const dayDuration = sunsetToday.getTime() - sunriseToday.getTime();
     const elapsedTime = now.getTime() - sunriseToday.getTime();
+    let sunPercent = Math.max(0, Math.min(1.1, elapsedTime / dayDuration));
 
-    // 0.0 = Sunrise, 1.0 = Sunset
-    let rawPercent = elapsedTime / dayDuration;
-    // Clamp for visual sanity
-    if (rawPercent < 0) rawPercent = 0; // Pre-sunrise
-    if (rawPercent > 1.1) rawPercent = 1.1; // Post-sunset (allow a bit visually)
+    const sunX = sunPercent * 100;
+    const sunY = Math.sin(sunPercent * Math.PI) * 60;
+    const sunBottom = sunPercent > 1 ? -20 : Math.max(-10, sunY);
 
-    // Calculate Sun Coordinates
-    // Arc path: Y goes up then down. Simple parabola or Sine wave.
-    // x = percent * 100
-    // y = sin(percent * PI) * heightFactor
-    // We want coordinates for "bottom" CSS property.
-    // At 0% -> bottom: 0%. At 50% -> bottom: 60%. At 100% -> bottom: -10%.
+    // Dynamic styling based on time
+    let bgGradient = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+    let sunColor = "#FDB813";
+    let sunSize = "w-40 h-40";
+    let statusText = "Time Until Shkia";
+    let timerColor = "text-white";
 
-    const sunX = rawPercent * 100;
-    // Use Sine for arc height
-    const sunY = Math.sin(rawPercent * Math.PI) * 70; // Peak at 70% height
-
-    // Adjust for sunset dip
-    const visualBottom = rawPercent > 1 ? -20 : Math.max(-10, sunY - 10);
-
-    // --- Dynamic Styling ---
-    let bgGradient = "linear-gradient(to top, #87CEEB 0%, #00BFFF 100%)"; // Standard Day
-    let sunColor = "#FDB813"; // Yellow sun
-    let sunGlow = "drop-shadow-[0_0_60px_rgba(253,184,19,0.8)]";
-    let statusText = "Time until Shkia";
-    let textColor = "text-white";
-    let clockClass = "text-white drop-shadow-md";
-
-    if (rawPercent < 0.1) {
-        // Sunrise
-        bgGradient = "linear-gradient(to top, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%)";
+    if (sunPercent < 0.2) {
+        bgGradient = "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)";
         sunColor = "#FF6B6B";
-    } else if (rawPercent > 0.85 && rawPercent <= 1.0) {
-        // Golden Hour / Sunset
-        bgGradient = "linear-gradient(to top, #f6d365 0%, #fda085 100%)";
-        sunColor = "#FF4500"; // OrangeRed
-        sunGlow = "drop-shadow-[0_0_80px_rgba(255,69,0,0.8)]";
+        statusText = "Morning";
+    } else if (sunPercent >= 0.8 && sunPercent <= 1.0) {
+        bgGradient = "linear-gradient(135deg, #fa709a 0%, #fee140 100%)";
+        sunColor = "#FF6500";
+        sunSize = "w-48 h-48";
         statusText = "Approaching Sunset";
-    } else if (rawPercent > 1.0) {
-        // Twilight / Night
-        bgGradient = "linear-gradient(to top, #09203f 0%, #537895 100%)";
-        sunColor = "#444"; // Dark set sun
+    } else if (sunPercent > 1.0) {
+        bgGradient = "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)";
+        sunColor = "#2a2a2a";
         statusText = "Shkia Passed";
+        timerColor = "text-blue-200";
     }
 
-    // Panic Overrides (Specific to time remaining, not just sun position)
-    let isPanic = false;
     if (minutesLeft <= 5 && minutesLeft > 0) {
-        bgGradient = "linear-gradient(to top, #380000, #000000)"; // Dark Red/Black
-        sunColor = "#FF0000"; // Blood sun
-        sunGlow = "drop-shadow-[0_0_100px_rgba(255,0,0,1)] animate-pulse";
-        statusText = "SHKIA IMMINENT";
-        isPanic = true;
-        clockClass = "text-red-500 font-black glitch-text";
-    } else if (minutesLeft <= 15 && minutesLeft > 0) {
-        statusText = "Critical Time";
-        clockClass = "text-red-100 drop-shadow-[0_0_10px_red]";
+        bgGradient = "linear-gradient(135deg, #eb3349 0%, #f45c43 100%)";
+        sunColor = "#FF0000";
+        statusText = "SHKIA IMMINENT!";
+        timerColor = "text-white font-black animate-pulse";
     }
 
     return (
-        <div
-            className="fixed inset-0 overflow-hidden transition-all duration-1000 ease-in-out"
-            style={{ background: bgGradient }}
+        <motion.div
+            className="fixed inset-0 overflow-hidden"
+            animate={{ background: bgGradient }}
+            transition={{ duration: 2 }}
         >
-            {/* --- Sun Graphic --- */}
+            {/* Sun - Background Layer */}
             <motion.div
-                className={`absolute w-32 h-32 rounded-full ${sunGlow}`}
+                className={`absolute ${sunSize} rounded-full transition-all duration-1000`}
                 style={{
-                    left: `calc(${sunX}% - 64px)`, // Center horizontally on point
-                    bottom: `${visualBottom > 100 ? 100 : visualBottom}%`,
-                    background: sunColor,
+                    left: `calc(${sunX}% - ${sunSize === 'w-48 h-48' ? '96px' : '80px'})`,
+                    bottom: `${Math.min(100, sunBottom)}%`,
+                    background: `radial-gradient(circle, ${sunColor} 0%, ${sunColor}99 50%, transparent 100%)`,
+                    boxShadow: `0 0 80px ${sunColor}`,
                     zIndex: 10
                 }}
-                transition={{ type: "spring", stiffness: 50, damping: 20 }}
             />
 
-            {/* --- Layout Wrapper (Z-20) --- */}
-            <div className="relative z-20 w-full h-full flex flex-col items-center justify-center p-4">
+            {/* Main Content - Flexbox Layout */}
+            <div className="relative z-20 h-full flex flex-col items-center justify-between p-8 md:p-12">
 
-                {/* Reset Button (Top Left) */}
-                <button
-                    onClick={onReset}
-                    className="absolute top-6 left-6 p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white transition shadow-lg group"
-                    title="Change Location"
-                >
-                    <ArrowLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
-                </button>
-
-                {/* Location Name (Top Center - Safe Zone) */}
-                <div className="absolute top-16 md:top-20 text-center">
-                    <h2 className="text-white/80 font-medium tracking-[0.3em] uppercase drop-shadow-sm text-sm md:text-base">
+                {/* Top Section - Location & Status */}
+                <div className="w-full flex flex-col items-center space-y-3 pt-4">
+                    <motion.h2
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-white/90 text-xl md:text-2xl font-light tracking-[0.3em] uppercase drop-shadow-lg"
+                    >
                         {locationName}
-                    </h2>
-                    <p className="text-white/60 text-xs mt-1 font-mono uppercase tracking-widest">{statusText}</p>
+                    </motion.h2>
+                    <p className="text-white/70 text-sm md:text-base uppercase tracking-widest font-medium">
+                        {statusText}
+                    </p>
                 </div>
 
-                {/* Main Clock (Centered) */}
-                <div className="mt-8 relative">
-                    <h1 className={`font-mono-digital text-[15vw] xs:text-[100px] leading-none tracking-tighter tabular-nums ${clockClass}`}>
+                {/* Center Section - Timer */}
+                <div className="flex-1 flex items-center justify-center">
+                    <motion.h1
+                        key={formatTimeLeft(msToShkia)}
+                        initial={{ scale: 0.95 }}
+                        animate={{ scale: 1 }}
+                        className={`font-mono-digital text-[20vw] md:text-[180px] leading-none tracking-tighter ${timerColor} drop-shadow-[0_0_30px_rgba(255,255,255,0.5)]`}
+                    >
                         {formatTimeLeft(msToShkia)}
-                    </h1>
+                    </motion.h1>
                 </div>
 
-                {/* Info Footer */}
-                <div className="absolute bottom-6 text-center">
-                    <div className="flex space-x-8 text-white/50 text-xs md:text-sm font-mono tracking-wider bg-black/10 px-4 py-2 rounded-full backdrop-blur-sm">
-                        <span>SUNRISE: {sunriseToday.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        <span>SUNSET: {sunsetToday.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                {/* Bottom Section - Sunrise/Sunset Info */}
+                <div className="w-full flex flex-col items-center space-y-4 pb-4">
+                    <div className="flex items-center gap-6 md:gap-8 text-white/60 text-sm md:text-base font-mono bg-black/20 backdrop-blur-sm px-6 py-3 rounded-full">
+                        <div className="flex flex-col items-center gap-1 min-w-[90px]">
+                            <span className="text-xs opacity-60 uppercase tracking-wider whitespace-nowrap">Sunrise</span>
+                            <span className="font-semibold whitespace-nowrap">{sunriseToday.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                        <div className="w-px h-8 bg-white/20 flex-shrink-0"></div>
+                        <div className="flex flex-col items-center gap-1 min-w-[90px]">
+                            <span className="text-xs opacity-60 uppercase tracking-wider whitespace-nowrap">Sunset</span>
+                            <span className="font-semibold whitespace-nowrap">{sunsetToday.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
                     </div>
                 </div>
-
             </div>
-        </div>
+
+            {/* Reset Button - Fixed Top Right */}
+            <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={onReset}
+                className="fixed top-6 right-6 z-30 p-4 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white transition-all shadow-xl border border-white/20"
+                title="Change Location"
+            >
+                <X size={24} />
+            </motion.button>
+        </motion.div>
     );
 }

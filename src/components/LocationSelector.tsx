@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MapPin, ArrowRight, Loader2 } from "lucide-react";
+import { MapPin, Search, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface LocationSelectorProps {
@@ -62,68 +62,75 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
     };
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen w-full p-4 relative overflow-hidden bg-black text-white">
-            {/* Cinematic Background */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900 via-black to-black opacity-80 z-0" />
+        <div className="flex flex-col items-center justify-center min-h-screen w-full p-6 relative overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
+            {/* Animated Background Elements */}
+            <div className="absolute inset-0 opacity-30">
+                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl animate-pulse"></div>
+                <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl animate-pulse delay-1000"></div>
+                <div className="absolute bottom-1/4 left-1/3 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl animate-pulse delay-2000"></div>
+            </div>
 
             <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-                className="relative z-10 w-full max-w-lg text-center"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6 }}
+                className="relative z-10 w-full max-w-md"
             >
-                <h1 className="text-4xl md:text-5xl font-thin tracking-wide mb-12 text-white/90">
-                    Shkia Clock
-                </h1>
+                {/* Title */}
+                <div className="text-center mb-12">
+                    <h1 className="text-5xl md:text-6xl font-bold text-white mb-3 drop-shadow-2xl">
+                        Shkia Clock
+                    </h1>
+                    <p className="text-white/70 text-lg tracking-wide">Track the sunset, never miss the zman</p>
+                </div>
 
-                {/* Improved Input Layout - No Overlap */}
-                <form onSubmit={handleManualSearch} className="relative w-full flex flex-col items-center space-y-6">
-                    <div className="relative w-full">
+                {/* Search Form */}
+                <form onSubmit={handleManualSearch} className="space-y-4">
+                    <div className="relative">
                         <input
                             type="text"
-                            placeholder="Enter City..."
+                            placeholder="Enter your city..."
                             autoFocus
                             value={manualCity}
                             onChange={(e) => setManualCity(e.target.value)}
-                            className="w-full bg-transparent border-b border-white/30 py-4 text-3xl text-center font-light focus:outline-none focus:border-blue-400 transition-colors placeholder-white/20"
+                            className="w-full bg-white/10 backdrop-blur-md border-2 border-white/20 rounded-2xl px-6 py-4 text-white placeholder-white/40 text-lg focus:outline-none focus:border-white/60 transition-all shadow-xl"
                         />
+                        <button
+                            type="submit"
+                            disabled={!manualCity || loading}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-3 bg-white/20 hover:bg-white/30 rounded-xl transition-all disabled:opacity-0"
+                        >
+                            {loading ? <Loader2 className="animate-spin text-white" size={20} /> : <Search className="text-white" size={20} />}
+                        </button>
                     </div>
-
-                    <button
-                        type="submit"
-                        disabled={!manualCity || loading}
-                        className="w-full py-4 bg-white/10 hover:bg-white/20 rounded-full text-sm uppercase tracking-widest transition-all disabled:opacity-0 flex items-center justify-center space-x-2"
-                    >
-                        {loading ? <Loader2 className="animate-spin" size={16} /> : <span>Search</span>}
-                        {!loading && <ArrowRight size={16} />}
-                    </button>
                 </form>
 
-                <div className="mt-12 flex items-center justify-center w-full">
-                    <div className="h-px bg-white/10 w-12 mx-4"></div>
-                    <span className="text-white/30 text-xs uppercase tracking-widest">OR</span>
-                    <div className="h-px bg-white/10 w-12 mx-4"></div>
+                {/* Divider */}
+                <div className="flex items-center my-8">
+                    <div className="flex-1 h-px bg-white/20"></div>
+                    <span className="px-4 text-white/50 text-sm uppercase tracking-widest">Or</span>
+                    <div className="flex-1 h-px bg-white/20"></div>
                 </div>
 
-                <div className="mt-8">
-                    <button
-                        onClick={handleGeolocation}
-                        disabled={loading}
-                        className="flex items-center justify-center space-x-2 mx-auto text-blue-400 hover:text-blue-300 transition-colors uppercase tracking-widest text-xs border border-blue-400/30 px-6 py-3 rounded-full hover:bg-blue-400/10"
-                    >
-                        <MapPin size={14} />
-                        <span>Use My Location</span>
-                    </button>
-                </div>
+                {/* Geolocation Button */}
+                <button
+                    onClick={handleGeolocation}
+                    disabled={loading}
+                    className="w-full flex items-center justify-center space-x-3 bg-white/10 hover:bg-white/20 backdrop-blur-md border-2 border-white/20 rounded-2xl px-6 py-4 text-white transition-all shadow-xl disabled:opacity-50"
+                >
+                    <MapPin size={20} />
+                    <span className="text-lg font-medium">Use My Location</span>
+                </button>
 
+                {/* Error Message */}
                 {error && (
-                    <motion.p
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="mt-6 text-red-500 font-mono text-sm tracking-wider"
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-6 p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-red-200 text-center backdrop-blur-sm"
                     >
                         {error}
-                    </motion.p>
+                    </motion.div>
                 )}
             </motion.div>
         </div>
