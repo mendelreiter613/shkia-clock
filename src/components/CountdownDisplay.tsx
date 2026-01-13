@@ -151,23 +151,24 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                 {!isNight && (
                     <motion.div
                         initial={{ opacity: 0, scale: 0 }}
-                        animate={{
-                            opacity: 1,
+                        animate={{ 
+                            opacity: 1, 
                             scale: 1,
                             left: `${sunProgress}%`,
-                            bottom: `${20 + (sunHeight / 5)}%` // Dynamic height
+                            bottom: `${20 + (sunHeight/5)}%` // Dynamic height
                         }}
                         exit={{ opacity: 0, scale: 0 }}
                         transition={{ duration: 1, ease: "linear" }}
-                        className="absolute w-24 h-24 rounded-full z-0 blur-xl pointer-events-none"
+                        className="absolute w-32 h-32 rounded-full z-0 pointer-events-none" // Removed blur-xl from container, added size
                         style={{
-                            background: `radial-gradient(circle, ${sunProgress > 85 ? '#f97316' : '#facc15'} 0%, transparent 70%)`,
-                            boxShadow: `0 0 ${sunProgress > 85 ? '60px' : '100px'} ${sunProgress > 85 ? 'rgba(249, 115, 22, 0.6)' : 'rgba(250, 204, 21, 0.4)'}`,
-                            transform: 'translate(-50%, 50%)'
+                            background: `radial-gradient(circle, ${sunProgress > 85 ? '#f97316' : '#facc15'} 20%, transparent 70%)`,
+                            boxShadow: `0 0 ${sunProgress > 85 ? '50px' : '80px'} ${sunProgress > 85 ? 'rgba(249, 115, 22, 0.8)' : 'rgba(250, 204, 21, 0.6)'}`, // Increased opacity
+                            transform: 'translate(-50%, 50%)',
+                            filter: 'blur(8px)' // Reduced blur significantly
                         }}
                     >
-                        {/* Core of the sun */}
-                        <div className="absolute inset-4 bg-white rounded-full opacity-80 blur-md" />
+                        {/* Core of the sun - Made solid and bright */}
+                        <div className="absolute inset-8 bg-white rounded-full opacity-100 shadow-[0_0_20px_rgba(255,255,255,0.8)]" />
                     </motion.div>
                 )}
             </AnimatePresence>
