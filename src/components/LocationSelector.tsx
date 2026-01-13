@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MapPin, Search, Loader2 } from "lucide-react";
+import { MapPin, ArrowRight, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface LocationSelectorProps {
@@ -17,7 +17,7 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
         setLoading(true);
         setError("");
         if (!navigator.geolocation) {
-            setError("Geolocation is not supported by your browser");
+            setError("Geolocation not supported");
             setLoading(false);
             return;
         }
@@ -27,7 +27,7 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
                 setLoading(false);
             },
             () => {
-                setError("Unable to retrieve your location");
+                setError("Location access denied");
                 setLoading(false);
             }
         );
@@ -55,61 +55,67 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
                 setError("City not found");
             }
         } catch {
-            setError("Error searching for city");
+            setError("Network error");
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="glass-panel p-8 rounded-2xl w-full max-w-md text-white"
-        >
-            <h2 className="text-3xl font-bold mb-6 text-center tracking-tight">Set Location</h2>
+        <div className="flex flex-col items-center justify-center min-h-screen w-full p-4 relative overflow-hidden bg-black text-white">
+            {/* Ambient Background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900 opacity-50 z-0" />
 
-            <button
-                onClick={handleGeolocation}
-                disabled={loading}
-                className="flex items-center justify-center space-x-2 w-full py-3 bg-blue-600 hover:bg-blue-500 transition-all rounded-xl font-medium shadow-lg shadow-blue-900/50 disabled:opacity-50"
+            <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="relative z-10 w-full max-w-xl text-center"
             >
-                {loading ? <Loader2 className="animate-spin" size={20} /> : <MapPin size={20} />}
-                <span>Auto-Detect Location</span>
-            </button>
+                <h1 className="text-4xl md:text-6xl font-extralight tracking-tight mb-12 opacity-80">
+                    Where are you?
+                </h1>
 
-            <div className="relative flex py-6 items-center w-full">
-                <div className="flex-grow border-t border-white/20"></div>
-                <span className="flex-shrink mx-4 text-white/40 text-sm tracking-widest uppercase">Or Enter City</span>
-                <div className="flex-grow border-t border-white/20"></div>
-            </div>
+                <form onSubmit={handleManualSearch} className="relative w-full group">
+                    <input
+                        type="text"
+                        placeholder="Type your city..."
+                        autoFocus
+                        value={manualCity}
+                        onChange={(e) => setManualCity(e.target.value)}
+                        className="w-full bg-transparent border-b-2 border-white/20 py-4 text-3xl md:text-5xl text-center font-light focus:outline-none focus:border-white/60 transition-colors placeholder-white/10"
+                    />
 
-            <form onSubmit={handleManualSearch} className="w-full relative">
-                <input
-                    type="text"
-                    placeholder="New York, Jerusalem, London..."
-                    value={manualCity}
-                    onChange={(e) => setManualCity(e.target.value)}
-                    className="w-full p-4 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-white/30 transition-all"
-                />
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="absolute right-2 top-2 bottom-2 aspect-square flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-lg text-white transition-colors disabled:opacity-50"
-                >
-                    {loading ? <Loader2 className="animate-spin" size={20} /> : <Search size={20} />}
-                </button>
-            </form>
+                    <button
+                        type="submit"
+                        disabled={!manualCity || loading}
+                        className="absolute right-0 top-1/2 -translate-y-1/2 p-2 opacity-0 group-focus-within:opacity-100 disabled:opacity-0 transition-opacity"
+                    >
+                        {loading ? <Loader2 className="animate-spin" /> : <ArrowRight size={32} />}
+                    </button>
+                </form>
 
-            {error && (
-                <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-red-400 text-sm mt-4 text-center bg-red-900/20 p-2 rounded-lg border border-red-500/20"
-                >
-                    {error}
-                </motion.p>
-            )}
-        </motion.div>
+                <div className="mt-16">
+                    <button
+                        onClick={handleGeolocation}
+                        disabled={loading}
+                        className="flex items-center justify-center space-x-3 mx-auto text-white/40 hover:text-white transition-colors uppercase tracking-widest text-sm"
+                    >
+                        <MapPin size={16} />
+                        <span>Use Current Location</span>
+                    </button>
+                </div>
+
+                {error && (
+                    <motion.p
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-8 text-red-500 font-mono tracking-widest"
+                    >
+                        {error}
+                    </motion.p>
+                )}
+            </motion.div>
+        </div>
     );
 }
