@@ -23,14 +23,15 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-twilight relative selection:bg-purple-500/30">
+    // Updated background to solid black
+    <main className="min-h-screen bg-black relative selection:bg-yellow-500/30">
       <AnimatePresence mode="wait">
         {location && zmanim ? (
           <motion.div
             key="countdown"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.05 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
             className="w-full h-full"
           >
@@ -45,8 +46,8 @@ export default function Home() {
             key="selector"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0, filter: 'blur(20px)', scale: 0.95 }}
-            transition={{ duration: 0.5 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.4 }}
             className="w-full h-full"
           >
             <LocationSelector onLocationFound={handleLocationFound} />

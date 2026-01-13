@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { MapPin, Loader2, Search, Navigation } from "lucide-react";
+import { Loader2, Search, MapPin, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface LocationSelectorProps {
@@ -20,8 +20,7 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
     const [suggestions, setSuggestions] = useState<CityResult[]>([]);
     const [loading, setLoading] = useState(false);
     const [showSuggestions, setShowSuggestions] = useState(false);
-    const [error, setError] = useState("");
-    const searchTimeout = useRef<NodeJS.Timeout | undefined>(undefined);
+    const searchTimeout = useRef<NodeJS.Timeout>();
 
     useEffect(() => {
         if (searchQuery.length < 2) {
@@ -49,7 +48,7 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
                 setSuggestions(cities);
                 setShowSuggestions(cities.length > 0);
             } catch {
-                setError("Could not search cities.");
+                console.error("Search failed");
             } finally {
                 setLoading(false);
             }
@@ -66,78 +65,67 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
 
     const handleGeolocation = () => {
         setLoading(true);
-        setError("");
-        if (!navigator.geolocation) {
-            setError("Geolocation is not supported");
-            setLoading(false);
-            return;
-        }
+        if (!navigator.geolocation) return;
+        
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 onLocationFound(position.coords.latitude, position.coords.longitude, "Current Location");
             },
-            () => {
-                setError("Location access denied");
-                setLoading(false);
-            }
+            () => setLoading(false)
         );
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen p-4">
-
-            <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="w-full max-w-md glass-card rounded-3xl p-8 relative z-10"
+        <div className="flex items-center justify-center h-screen bg-black p-4">
+            
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-full max-w-md"
             >
-                {/* Header */}
-                <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white/5 mb-4 border border-white/10 shadow-lg shadow-purple-500/10">
-                        <MapPin className="text-white/80" size={24} />
-                    </div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight">Shkia Clock</h1>
-                    <p className="text-white/40 text-sm mt-2">Where are you located?</p>
+                {/* Minimal Header */}
+                <div className="text-center mb-10">
+                    <h1 className="text-4xl font-bold text-white tracking-tight mb-2">Shkia Clock</h1>
+                    <p className="text-white/40">Enter your location to synchronize.</p>
                 </div>
 
-                {/* Input Container */}
-                <div className="relative mb-4">
-                    <div className="relative z-20">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={18} />
-                        <input
-                            type="text"
-                            placeholder="Search city (e.g. Brooklyn)..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-                            className="w-full bg-black/20 border border-white/10 rounded-xl pl-11 pr-10 py-4 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-white/10 transition-all"
-                            autoFocus
-                        />
-                        {loading && (
-                            <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 animate-spin" size={18} />
-                        )}
+                {/* Input Field - Dark Theme */}
+                <div className="relative group z-20">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Search className="h-5 w-5 text-white/30 group-focus-within:text-white transition-colors" />
                     </div>
+                    <input
+                        type="text"
+                        className="block w-full pl-11 pr-4 py-4 bg-[#111] border border-[#333] rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-white/20 focus:border-white/40 transition-all text-lg"
+                        placeholder="Search city..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                        autoFocus
+                    />
+                    {loading && (
+                        <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
+                            <Loader2 className="h-5 w-5 text-white/30 animate-spin" />
+                        </div>
+                    )}
 
-                    {/* Suggestions Dropdown */}
+                    {/* Dropdown Results */}
                     <AnimatePresence>
                         {showSuggestions && suggestions.length > 0 && (
                             <motion.div
-                                initial={{ opacity: 0, y: -10 }}
+                                initial={{ opacity: 0, y: 5 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                className="absolute top-full left-0 right-0 mt-2 bg-[#1e293b] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50"
+                                exit={{ opacity: 0, y: 5 }}
+                                className="absolute top-full left-0 right-0 mt-2 bg-[#1A1A1A] border border-[#333] rounded-xl shadow-2xl overflow-hidden z-50"
                             >
                                 {suggestions.map((city, i) => (
                                     <button
                                         key={i}
                                         onClick={() => handleSelectCity(city)}
-                                        className="w-full px-4 py-3 text-left hover:bg-white/5 transition-colors border-b border-white/5 last:border-0 flex items-center gap-3"
+                                        className="w-full text-left px-5 py-3 hover:bg-[#252525] transition-colors border-b border-white/5 last:border-0"
                                     >
-                                        <MapPin size={14} className="text-white/40 shrink-0" />
-                                        <div className="min-w-0">
-                                            <div className="text-white text-sm font-medium truncate">{city.name}</div>
-                                            <div className="text-white/30 text-xs truncate">{city.display_name}</div>
-                                        </div>
+                                        <div className="text-white font-medium">{city.name}</div>
+                                        <div className="text-white/40 text-xs truncate">{city.display_name}</div>
                                     </button>
                                 ))}
                             </motion.div>
@@ -145,27 +133,25 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
                     </AnimatePresence>
                 </div>
 
-                <div className="relative flex py-2 items-center">
-                    <div className="flex-grow border-t border-white/10"></div>
-                    <span className="flex-shrink mx-4 text-white/20 text-xs uppercase tracking-wider">Or</span>
-                    <div className="flex-grow border-t border-white/10"></div>
+                {/* Divider */}
+                <div className="flex items-center gap-4 my-8">
+                    <div className="h-px bg-[#222] flex-1" />
+                    <span className="text-[#444] text-xs font-bold uppercase tracking-widest">or</span>
+                    <div className="h-px bg-[#222] flex-1" />
                 </div>
 
-                {/* GPS Button */}
+                {/* Geo Button */}
                 <button
                     onClick={handleGeolocation}
-                    disabled={loading}
-                    className="w-full mt-2 flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl py-4 text-white transition-all disabled:opacity-50"
+                    className="w-full flex items-center justify-between px-6 py-4 bg-[#111] hover:bg-[#161616] border border-[#333] hover:border-[#444] rounded-xl text-white transition-all group"
                 >
-                    <Navigation size={18} />
-                    <span className="text-sm font-medium">Use My Location</span>
+                    <div className="flex items-center gap-3">
+                        <MapPin className="text-white/40 group-hover:text-white transition-colors" size={20} />
+                        <span className="font-medium">Use current location</span>
+                    </div>
+                    <ArrowRight className="text-white/20 group-hover:text-white transition-colors" size={18} />
                 </button>
 
-                {error && (
-                    <div className="mt-4 text-center text-red-400 text-xs bg-red-500/10 py-2 rounded-lg">
-                        {error}
-                    </div>
-                )}
             </motion.div>
         </div>
     );

@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --background: #0f172a;
+  --background: #000000;
   --foreground: #ffffff;
 }
 
@@ -11,34 +11,28 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: var(--font-inter), sans-serif;
-  overflow: hidden; /* Prevents scrollbars for immersive feel */
-}
-
-/* Deep Twilight Gradient Animation */
-@keyframes twilight-drift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-.bg-twilight {
-  background: linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81, #172554);
-  background-size: 400% 400%;
-  animation: twilight-drift 20s ease infinite;
+  overflow: hidden; /* Immersive feel */
 }
 
 @layer utilities {
-  .font-mono-digital {
-    font-family: var(--font-orbitron), monospace;
-    font-variant-numeric: tabular-nums; /* Keeps numbers from jumping */
+  /* The font for the big numbers */
+  .font-clock {
+    font-family: var(--font-inter), sans-serif;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.05em; /* Tight tracking like the screenshot */
   }
 
-  /* Refined Glassmorphism */
-  .glass-card {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  /* The Glowing Sun Orb Effect */
+  .sun-glow {
+    background: radial-gradient(circle, #FFD600 0%, #FFCC00 40%, transparent 70%);
+    box-shadow: 0 0 60px 20px rgba(255, 215, 0, 0.3);
+    filter: blur(8px);
+  }
+  
+  /* Red glow for urgency */
+  .sun-glow-urgent {
+    background: radial-gradient(circle, #FF4500 0%, #FF0000 40%, transparent 70%);
+    box-shadow: 0 0 60px 20px rgba(255, 69, 0, 0.4);
+    filter: blur(8px);
   }
 }
