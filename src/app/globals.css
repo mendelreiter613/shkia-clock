@@ -11,12 +11,10 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: var(--font-inter), sans-serif;
-  overflow: hidden; /* Prevents scrolling for an immersive app feel */
+  overflow: hidden; /* Prevents scrollbars for immersive feel */
 }
 
-/* --- Animations --- */
-
-/* Deep Twilight Background Animation */
+/* Deep Twilight Gradient Animation */
 @keyframes twilight-drift {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -24,26 +22,23 @@ body {
 }
 
 .bg-twilight {
-  background: linear-gradient(-45deg, #020617, #1e1b4b, #312e81, #0f172a);
+  background: linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81, #172554);
   background-size: 400% 400%;
-  animation: twilight-drift 15s ease infinite;
+  animation: twilight-drift 20s ease infinite;
 }
 
 @layer utilities {
   .font-mono-digital {
     font-family: var(--font-orbitron), monospace;
+    font-variant-numeric: tabular-nums; /* Keeps numbers from jumping */
   }
 
-  /* Glassmorphism Utility */
-  .glass-panel {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  
-  /* Text Glow Utilities */
-  .text-glow {
-    text-shadow: 0 0 15px currentColor;
+  /* Refined Glassmorphism */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   }
 }

@@ -21,7 +21,7 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
     const [loading, setLoading] = useState(false);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [error, setError] = useState("");
-    const searchTimeout = useRef<NodeJS.Timeout | undefined>(undefined);
+    const searchTimeout = useRef<NodeJS.Timeout>();
 
     useEffect(() => {
         if (searchQuery.length < 2) {
@@ -84,105 +84,89 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
     };
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-6 w-full max-w-lg mx-auto relative z-10">
-
-            {/* Header */}
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-center mb-10"
+        <div className="flex items-center justify-center min-h-screen p-4">
+            
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }} 
+                animate={{ opacity: 1, scale: 1 }} 
+                className="w-full max-w-md glass-card rounded-3xl p-8 relative z-10"
             >
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/10 mb-4 ring-1 ring-white/20 shadow-[0_0_30px_rgba(255,255,255,0.1)]">
-                    <div className="w-2 h-2 bg-orange-400 rounded-full shadow-[0_0_10px_orange]" />
-                </div>
-                <h1 className="text-4xl md:text-5xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-white/60">
-                    Shkia Clock
-                </h1>
-                <p className="text-white/40 mt-2 font-light tracking-wide">
-                    Set your location to begin
-                </p>
-            </motion.div>
-
-            {/* Glass Card */}
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.1 }}
-                className="w-full glass-panel rounded-3xl p-2 shadow-2xl"
-            >
-                <div className="relative">
-                    <div className="absolute left-4 top-3.5 text-white/40">
-                        <Search size={20} />
+                {/* Header */}
+                <div className="text-center mb-8">
+                    <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white/5 mb-4 border border-white/10 shadow-lg shadow-purple-500/10">
+                        <MapPin className="text-white/80" size={24} />
                     </div>
-                    <input
-                        type="text"
-                        placeholder="Search city..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-                        className="w-full bg-transparent text-white placeholder-white/30 px-12 py-3 focus:outline-none text-lg"
-                        autoFocus
-                    />
-                    {loading && (
-                        <div className="absolute right-4 top-3.5 text-white/40 animate-spin">
-                            <Loader2 size={20} />
-                        </div>
-                    )}
+                    <h1 className="text-3xl font-bold text-white tracking-tight">Shkia Clock</h1>
+                    <p className="text-white/40 text-sm mt-2">Where are you located?</p>
                 </div>
 
-                {/* Suggestions List */}
-                <AnimatePresence>
-                    {showSuggestions && (
-                        <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="overflow-hidden border-t border-white/10"
-                        >
-                            <ul className="py-2">
+                {/* Input Container */}
+                <div className="relative mb-4">
+                    <div className="relative z-20">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={18} />
+                        <input
+                            type="text"
+                            placeholder="Search city (e.g. Brooklyn)..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                            className="w-full bg-black/20 border border-white/10 rounded-xl pl-11 pr-10 py-4 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-white/10 transition-all"
+                            autoFocus
+                        />
+                        {loading && (
+                            <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 animate-spin" size={18} />
+                        )}
+                    </div>
+
+                    {/* Suggestions Dropdown */}
+                    <AnimatePresence>
+                        {showSuggestions && suggestions.length > 0 && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                className="absolute top-full left-0 right-0 mt-2 bg-[#1e293b] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50"
+                            >
                                 {suggestions.map((city, i) => (
-                                    <li key={i}>
-                                        <button
-                                            onClick={() => handleSelectCity(city)}
-                                            className="w-full text-left px-4 py-3 hover:bg-white/10 transition-colors flex items-center gap-3 group"
-                                        >
-                                            <MapPin size={16} className="text-white/40 group-hover:text-orange-300 transition-colors" />
-                                            <div>
-                                                <div className="font-medium text-white/90">{city.name}</div>
-                                                <div className="text-xs text-white/40 truncate max-w-[250px]">{city.display_name}</div>
-                                            </div>
-                                        </button>
-                                    </li>
+                                    <button
+                                        key={i}
+                                        onClick={() => handleSelectCity(city)}
+                                        className="w-full px-4 py-3 text-left hover:bg-white/5 transition-colors border-b border-white/5 last:border-0 flex items-center gap-3"
+                                    >
+                                        <MapPin size={14} className="text-white/40 shrink-0" />
+                                        <div className="min-w-0">
+                                            <div className="text-white text-sm font-medium truncate">{city.name}</div>
+                                            <div className="text-white/30 text-xs truncate">{city.display_name}</div>
+                                        </div>
+                                    </button>
                                 ))}
-                            </ul>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </motion.div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
 
-            {/* GPS Button */}
-            <motion.button
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                onClick={handleGeolocation}
-                disabled={loading}
-                className="mt-4 flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-medium text-white/70 hover:text-white transition-all w-full max-w-xs"
-            >
-                <Navigation size={14} />
-                <span>Use Current Location</span>
-            </motion.button>
+                <div className="relative flex py-2 items-center">
+                    <div className="flex-grow border-t border-white/10"></div>
+                    <span className="flex-shrink mx-4 text-white/20 text-xs uppercase tracking-wider">Or</span>
+                    <div className="flex-grow border-t border-white/10"></div>
+                </div>
 
-            {/* Error Toast */}
-            {error && (
-                <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mt-6 px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-lg text-red-200 text-sm"
+                {/* GPS Button */}
+                <button
+                    onClick={handleGeolocation}
+                    disabled={loading}
+                    className="w-full mt-2 flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl py-4 text-white transition-all disabled:opacity-50"
                 >
-                    {error}
-                </motion.div>
-            )}
+                    <Navigation size={18} />
+                    <span className="text-sm font-medium">Use My Location</span>
+                </button>
+
+                {error && (
+                    <div className="mt-4 text-center text-red-400 text-xs bg-red-500/10 py-2 rounded-lg">
+                        {error}
+                    </div>
+                )}
+            </motion.div>
         </div>
     );
 }
