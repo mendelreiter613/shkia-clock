@@ -5,6 +5,7 @@ export interface ZmanimData {
     shkia: Date; // The target countdown time (could be tomorrow's shkia)
     sunriseToday: Date; // For visual sun cycle
     sunsetToday: Date; // For visual sun cycle
+    timeZone: string; // Location's timezone for proper time calculations
 }
 
 export function getZmanimData(lat: number, lng: number, timeZone: string): ZmanimData | null {
@@ -50,7 +51,8 @@ export function getZmanimData(lat: number, lng: number, timeZone: string): Zmani
         return {
             shkia: targetShkia,
             sunriseToday,
-            sunsetToday
+            sunsetToday,
+            timeZone
         };
 
     } catch (e) {

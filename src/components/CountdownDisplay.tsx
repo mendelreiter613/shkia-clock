@@ -102,12 +102,21 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
 
     if (!mounted) return null;
 
-    const { shkia, sunriseToday, sunsetToday } = zmanim;
+    const { shkia, sunriseToday, sunsetToday, timeZone } = zmanim;
     const msToShkia = shkia.getTime() - now.getTime();
     const time = formatTimeLeft(msToShkia);
     const hoursLeft = msToShkia / 1000 / 60 / 60;
     const dayOfWeek = now.getDay();
-    const currentHour = now.getHours();
+
+    // Get current hour in the LOCATION'S timezone (not browser's timezone)
+    const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timeZone,
+        hour: 'numeric',
+        hour12: false
+    });
+    const parts = formatter.formatToParts(now);
+    const hourPart = parts.find(part => part.type === 'hour');
+    const currentHour = hourPart ? parseInt(hourPart.value) : 0;
 
     // Get dynamic message based on current hour and day (not hours left!)
     const dynamicMessage = getDynamicMessage(currentHour, dayOfWeek);
@@ -273,7 +282,7 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                             Sunrise
                         </p>
                         <p className="text-white text-xl font-semibold font-clock">
-                            {sunriseToday.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {sunriseToday.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: timeZone })}
                         </p>
                     </div>
                 </div>
@@ -291,7 +300,7 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                             Sunset
                         </p>
                         <p className="text-white text-xl font-semibold font-clock">
-                            {sunsetToday.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {sunsetToday.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: timeZone })}
                         </p>
                     </div>
                 </div>
