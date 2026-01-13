@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MapPin } from "lucide-react";
+import { Search } from "lucide-react";
 import { motion } from "framer-motion";
 import { ZmanimData } from "@/lib/zmanim";
 
@@ -42,116 +42,114 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
     let sunPercent = Math.max(0, Math.min(1.1, elapsedTime / dayDuration));
 
     const sunX = sunPercent * 100;
-    const sunY = Math.sin(sunPercent * Math.PI) * 45;
-    const sunBottom = sunPercent > 1 ? -12 : Math.max(-5, sunY);
 
-    // Dynamic styling
-    let bgGradient = "linear-gradient(to bottom, #667eea 0%, #764ba2 100%)";
-    let sunColor = "#FFD700";
-    let statusText = "Until Shkia";
-    let timerColor = "text-white";
-
-    if (sunPercent < 0.2) {
-        bgGradient = "linear-gradient(to bottom, #ff9a9e 0%, #fecfef 100%)";
-        sunColor = "#FF6B6B";
-        statusText = "Morning";
-    } else if (sunPercent >= 0.8 && sunPercent <= 1.0) {
-        bgGradient = "linear-gradient(to bottom, #fa709a 0%, #fee140 100%)";
-        sunColor = "#FF6500";
-        statusText = "Approaching Sunset";
-    } else if (sunPercent > 1.0) {
-        bgGradient = "linear-gradient(to bottom, #0f2027 0%, #203a43 50%, #2c5364 100%)";
-        sunColor = "#1a1a1a";
-        statusText = "Shkia Passed";
-        timerColor = "text-blue-100";
-    }
+    // Status message based on time remaining
+    let statusMessage = "YOU HAVE PLENTY OF TIME.";
+    let statusColor = "text-white/80";
 
     if (minutesLeft <= 5 && minutesLeft > 0) {
-        bgGradient = "linear-gradient(to bottom, #eb3349 0%, #f45c43 100%)";
-        sunColor = "#FF0000";
-        statusText = "SHKIA NOW!";
-        timerColor = "text-white animate-pulse";
+        statusMessage = "SHKIA IS IMMINENT!";
+        statusColor = "text-red-400 animate-pulse";
+    } else if (minutesLeft <= 15 && minutesLeft > 0) {
+        statusMessage = "TIME IS RUNNING OUT.";
+        statusColor = "text-orange-400";
+    } else if (minutesLeft <= 30 && minutesLeft > 0) {
+        statusMessage = "SHKIA IS APPROACHING.";
+        statusColor = "text-yellow-400";
+    } else if (minutesLeft <= 0) {
+        statusMessage = "SHKIA HAS PASSED.";
+        statusColor = "text-gray-400";
     }
 
     return (
-        <motion.div
-            className="fixed inset-0 w-full h-full overflow-hidden flex items-center justify-center"
-            animate={{ background: bgGradient }}
-            transition={{ duration: 2 }}
-        >
-            {/* Sun - Integrated into background */}
+        <div className="fixed inset-0 w-full h-full bg-black overflow-hidden">
+
+            {/* Top Bar */}
+            <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-6 z-30">
+                {/* Logo */}
+                <div className="flex items-center gap-2 text-white">
+                    <div className="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center">
+                        <div className="w-3 h-3 rounded-full bg-white"></div>
+                    </div>
+                    <span className="text-xl font-bold tracking-tight">SHKIA CLOCK</span>
+                </div>
+
+                {/* Search/Change Location */}
+                <button
+                    onClick={onReset}
+                    className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white/70 hover:text-white transition-all"
+                >
+                    <Search size={16} />
+                    <span className="text-sm">Search city...</span>
+                </button>
+            </div>
+
+            {/* Sun */}
             <motion.div
-                className="absolute w-28 h-28 md:w-36 md:h-36 rounded-full transition-all duration-1000"
+                className="absolute top-16 rounded-full"
                 style={{
-                    left: `calc(${sunX}% - 72px)`,
-                    bottom: `${Math.min(100, sunBottom)}%`,
-                    background: `radial-gradient(circle, ${sunColor} 0%, ${sunColor}cc 40%, transparent 70%)`,
-                    boxShadow: `0 0 80px 30px ${sunColor}55`,
-                    filter: 'blur(1px)',
+                    left: `calc(${sunX}% - 80px)`,
+                    width: '160px',
+                    height: '160px',
+                    background: 'radial-gradient(circle, #FFD700 0%, #FFA500 50%, transparent 70%)',
+                    boxShadow: '0 0 120px 60px rgba(255, 215, 0, 0.6)',
                     zIndex: 5
                 }}
             />
 
-            {/* Main Content Container */}
-            <div className="relative z-10 w-full max-w-5xl mx-auto px-6">
+            {/* Main Content */}
+            <div className="relative z-10 h-full flex flex-col items-center justify-center px-6">
 
-                {/* Location & Status */}
-                <div className="text-center mb-8 md:mb-12">
-                    <motion.h2
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="text-white/95 text-2xl md:text-4xl font-light uppercase tracking-[0.2em] drop-shadow-lg mb-3"
-                    >
-                        {locationName}
-                    </motion.h2>
-                    <p className="text-white/80 text-lg md:text-xl font-medium tracking-wide">
-                        {statusText}
+                {/* Label */}
+                <div className="mb-4">
+                    <p className="text-white/50 text-sm md:text-base uppercase tracking-[0.3em] text-center">
+                        TIME UNTIL SHKIA • {locationName.toUpperCase()}
                     </p>
                 </div>
 
-                {/* Timer - Perfectly Sized */}
-                <div className="text-center mb-8 md:mb-12">
-                    <motion.h1
-                        key={Math.floor(msToShkia / 1000)}
-                        initial={{ opacity: 0.9 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.2 }}
-                        className={`font-mono-digital text-[15vw] sm:text-[120px] md:text-[140px] lg:text-[160px] leading-none tracking-tight ${timerColor}`}
-                        style={{
-                            fontVariantNumeric: 'tabular-nums',
-                            textShadow: '0 4px 30px rgba(0,0,0,0.3)'
-                        }}
+                {/* Timer */}
+                <div className="mb-8">
+                    <h1
+                        className="font-mono-digital text-[18vw] sm:text-[140px] md:text-[180px] lg:text-[220px] leading-none text-white tracking-tight"
+                        style={{ fontVariantNumeric: 'tabular-nums' }}
                     >
                         {formatTimeLeft(msToShkia)}
-                    </motion.h1>
+                    </h1>
                 </div>
 
-                {/* Sunrise/Sunset Info */}
-                <div className="flex justify-center">
-                    <div className="inline-flex items-center gap-8 md:gap-12 text-white/75 text-sm md:text-base bg-black/20 backdrop-blur-md px-8 md:px-10 py-4 md:py-5 rounded-full border border-white/15 shadow-xl">
-                        <div className="flex flex-col items-center gap-1.5">
-                            <span className="text-xs md:text-sm opacity-75 uppercase tracking-[0.15em] font-medium">Sunrise</span>
-                            <span className="font-semibold text-base md:text-lg text-white/95">{sunriseToday.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        </div>
-                        <div className="w-px h-12 bg-white/25"></div>
-                        <div className="flex flex-col items-center gap-1.5">
-                            <span className="text-xs md:text-sm opacity-75 uppercase tracking-[0.15em] font-medium">Sunset</span>
-                            <span className="font-semibold text-base md:text-lg text-white/95">{sunsetToday.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        </div>
+                {/* Status Pill */}
+                <div className="mb-16">
+                    <div className="flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 rounded-full">
+                        <div className="w-2 h-2 rounded-full bg-white/60"></div>
+                        <span className={`text-sm md:text-base font-medium tracking-wide ${statusColor}`}>
+                            {statusMessage}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Sunrise/Sunset */}
+                <div className="flex items-center gap-16 md:gap-24">
+                    <div className="text-center">
+                        <p className="text-white/40 text-xs md:text-sm uppercase tracking-[0.2em] mb-2">Sunrise</p>
+                        <p className="text-white text-lg md:text-2xl font-light">
+                            {sunriseToday.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                    </div>
+                    <div className="text-center">
+                        <p className="text-white/40 text-xs md:text-sm uppercase tracking-[0.2em] mb-2">Shkia</p>
+                        <p className="text-white text-lg md:text-2xl font-light">
+                            {sunsetToday.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
                     </div>
                 </div>
             </div>
 
-            {/* Reset Button - Top Right */}
-            <motion.button
-                whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.3)' }}
-                whileTap={{ scale: 0.95 }}
-                onClick={onReset}
-                className="fixed top-6 right-6 z-30 flex items-center gap-2 px-5 py-2.5 bg-white/20 backdrop-blur-md rounded-full text-white text-sm font-medium transition-all shadow-lg border border-white/25"
-            >
-                <MapPin size={16} />
-                <span className="hidden sm:inline">Change</span>
-            </motion.button>
-        </motion.div>
+            {/* Footer */}
+            <div className="absolute bottom-6 left-0 right-0 text-center">
+                <p className="text-white/30 text-xs uppercase tracking-[0.2em]">
+                    Based on Hebcal Halachic Algorithms • Use with caution for halachic decisions
+                </p>
+            </div>
+        </div>
     );
 }
