@@ -20,7 +20,8 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
     const [suggestions, setSuggestions] = useState<CityResult[]>([]);
     const [loading, setLoading] = useState(false);
     const [showSuggestions, setShowSuggestions] = useState(false);
-    const searchTimeout = useRef<NodeJS.Timeout>();
+    // IMPORTANT: useRef requires initial value in strict TypeScript mode
+    const searchTimeout = useRef<NodeJS.Timeout | undefined>(undefined);
 
     useEffect(() => {
         if (searchQuery.length < 2) {
@@ -76,9 +77,9 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen p-6 w-full">
-            
+
             {/* Main Container - Constrained Width */}
-            <motion.div 
+            <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="w-full max-w-[500px]"
