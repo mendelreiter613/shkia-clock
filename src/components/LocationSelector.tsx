@@ -21,7 +21,7 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
     const [loading, setLoading] = useState(false);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [error, setError] = useState("");
-    const searchTimeout = useRef<NodeJS.Timeout>();
+    const searchTimeout = useRef<NodeJS.Timeout | undefined>(undefined);
 
     useEffect(() => {
         if (searchQuery.length < 2) {
@@ -85,15 +85,15 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen p-6 w-full max-w-lg mx-auto relative z-10">
-            
+
             {/* Header */}
-            <motion.div 
-                initial={{ opacity: 0, y: -20 }} 
-                animate={{ opacity: 1, y: 0 }} 
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
                 className="text-center mb-10"
             >
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/10 mb-4 ring-1 ring-white/20 shadow-[0_0_30px_rgba(255,255,255,0.1)]">
-                   <div className="w-2 h-2 bg-orange-400 rounded-full shadow-[0_0_10px_orange]" />
+                    <div className="w-2 h-2 bg-orange-400 rounded-full shadow-[0_0_10px_orange]" />
                 </div>
                 <h1 className="text-4xl md:text-5xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-white/60">
                     Shkia Clock
@@ -104,7 +104,7 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
             </motion.div>
 
             {/* Glass Card */}
-            <motion.div 
+            <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.1 }}
@@ -175,7 +175,7 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
 
             {/* Error Toast */}
             {error && (
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="mt-6 px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-lg text-red-200 text-sm"
