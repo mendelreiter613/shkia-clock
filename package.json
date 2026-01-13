@@ -9,7 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@tailwindcss/typography": "^0.5.19",
     "clsx": "^2.1.1",
+    "framer-motion": "^12.26.1",
     "kosher-zmanim": "^0.9.0",
     "lucide-react": "^0.562.0",
     "next": "16.1.1",

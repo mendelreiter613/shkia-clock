@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, AlertTriangle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface CountdownDisplayProps {
     shkiaTime: Date;
@@ -12,7 +11,7 @@ interface CountdownDisplayProps {
 }
 
 function formatTimeLeft(ms: number) {
-    const totalSeconds = Math.floor(ms / 1000);
+    const totalSeconds = Math.max(0, Math.floor(ms / 1000));
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
@@ -30,73 +29,115 @@ export default function CountdownDisplay({ shkiaTime, locationName, onReset }: C
         const interval = setInterval(() => {
             const now = new Date();
             const diff = shkiaTime.getTime() - now.getTime();
-            setTimeLeft(diff > 0 ? diff : 0);
+            setTimeLeft(diff);
         }, 1000);
-
-        // Initial calc
-        const now = new Date();
-        const diff = shkiaTime.getTime() - now.getTime();
-        setTimeLeft(diff > 0 ? diff : 0);
-
         return () => clearInterval(interval);
     }, [shkiaTime]);
 
     if (!mounted) return null;
 
-    // Theme Logic
     const minutesLeft = timeLeft / 1000 / 60;
 
-    let themeClass = "bg-gradient-to-br from-blue-500 to-cyan-600 text-white"; // Normal
+    // DETERMINE STATE
+    let bgGradient = "linear-gradient(to bottom, #0f2027, #203a43, #2c5364)"; // Deep Space
+    let accentColor = "text-cyan-400";
     let statusText = "Time until Shkia";
-    let containerClass = "";
+    let heartBeat = false;
+    let panicMode = false;
+    let borderColor = "border-white/10";
 
-    if (minutesLeft <= 5) {
-        // PANIC MODE
-        themeClass = "bg-black text-red-600 border-8 border-red-600 font-mono tracking-tighter";
-        statusText = "SHKIA IS IMMINENT! RUN!";
-        containerClass = "animate-shake";
-    } else if (minutesLeft <= 15) {
-        // DANGER MODE
-        themeClass = "bg-red-600 text-white animate-pulse";
-        statusText = "URGENT: Shkia Approaching!";
-    } else if (minutesLeft <= 60) {
-        // WARNING MODE
-        themeClass = "bg-amber-500 text-black";
-        statusText = "Getting closer...";
+    if (minutesLeft <= 5 && minutesLeft > 0) {
+        // PANIC
+        bgGradient = "radial-gradient(circle, #200101 0%, #000000 100%)";
+        accentColor = "text-red-500 glitch-text";
+        statusText = "RUN!! SHKIA IS NOW!!";
+        panicMode = true;
+        borderColor = "border-red-600/50";
+    } else if (minutesLeft <= 15 && minutesLeft > 0) {
+        // CRITICAL
+        bgGradient = "radial-gradient(circle, #4a0000 0%, #1a0505 100%)";
+        accentColor = "text-red-500 text-glow-strong";
+        statusText = "CRITICAL: ZMAN IMMINENT";
+        heartBeat = true;
+        borderColor = "border-red-500/30";
+    } else if (minutesLeft <= 60 && minutesLeft > 0) {
+        // WARNING
+        bgGradient = "linear-gradient(to bottom, #5f2c82, #49a09d)"; // Sunset-ish
+        accentColor = "text-amber-400 text-glow";
+        statusText = "Approaching Shkia...";
+        borderColor = "border-amber-500/30";
+    } else if (minutesLeft <= 0) {
+        // PASSED
+        bgGradient = "linear-gradient(to bottom, #000000, #111111)";
+        accentColor = "text-gray-500";
+        statusText = "Shkia Passed";
     }
 
     return (
-        <div className={twMerge(
-            "flex flex-col items-center justify-center w-full h-screen transition-colors duration-1000 p-4 relative",
-            themeClass,
-            containerClass
-        )}>
+        <motion.div
+            className={`fixed inset-0 flex flex-col items-center justify-center overflow-hidden ${panicMode ? "shake" : ""}`}
+            animate={{ background: bgGradient }}
+            transition={{ duration: 2 }}
+        >
+            {/* Cinematic Overlays */}
+            <div className="vignette" />
+            <div className="scanlines" />
 
+            {/* Reset Button */}
             <button
                 onClick={onReset}
-                className="absolute top-4 right-4 p-2 bg-white/20 rounded-full hover:bg-white/40 transition"
+                className="absolute top-6 right-6 p-3 bg-white/5 hover:bg-white/10 backdrop-blur rounded-full text-white/50 hover:text-white transition z-50"
                 title="Change Location"
             >
                 <RefreshCw size={20} />
             </button>
 
-            <div className="text-center space-y-8">
-                <h2 className="text-2xl md:text-4xl uppercase font-bold tracking-widest opacity-90">
+            {/* Main Content Card */}
+            <div className={`relative z-20 p-12 rounded-3xl backdrop-blur-xl bg-black/20 border ${borderColor} shadow-2xl flex flex-col items-center max-w-4xl w-full mx-4`}>
+
+                {/* Location Header */}
+                <motion.h2
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-white/60 text-lg sm:text-2xl uppercase tracking-[0.2em] mb-8 font-medium font-sans"
+                >
                     {locationName}
-                </h2>
+                </motion.h2>
 
-                <h1 className="text-6xl md:text-9xl font-black tabular-nums">
-                    {formatTimeLeft(timeLeft)}
-                </h1>
+                {/* Timer */}
+                <div className="relative">
+                    <motion.h1
+                        key={timeLeft} // Remount on tick? No, just animate text
+                        animate={heartBeat ? { scale: [1, 1.05, 1], textShadow: ["0 0 20px red", "0 0 50px red", "0 0 20px red"] } : {}}
+                        transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut" }}
+                        className={`font-mono-digital text-7xl sm:text-9xl font-bold tabular-nums tracking-tighter ${accentColor}`}
+                        data-text={formatTimeLeft(timeLeft)}
+                    >
+                        {formatTimeLeft(timeLeft)}
+                    </motion.h1>
+                </div>
 
-                <p className="text-xl md:text-3xl font-semibold uppercase tracking-wider">
-                    {statusText}
-                </p>
+                {/* Status Text */}
+                <motion.div
+                    className="mt-8 flex items-center space-x-3"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                >
+                    {panicMode && <AlertTriangle className="text-red-500 animate-bounce" />}
+                    <p className={`text-xl sm:text-3xl font-bold uppercase tracking-widest ${panicMode ? "text-red-500" : "text-white/80"}`}>
+                        {statusText}
+                    </p>
+                    {panicMode && <AlertTriangle className="text-red-500 animate-bounce" />}
+                </motion.div>
 
-                <p className="text-sm opacity-75 mt-4">
-                    Shkia Time: {shkiaTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </p>
+                {/* Sub Info */}
+                <div className="mt-8 pt-8 border-t border-white/10 w-full text-center">
+                    <p className="text-white/40 font-mono text-sm">
+                        Target: {shkiaTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                </div>
+
             </div>
-        </div>
+        </motion.div>
     );
 }

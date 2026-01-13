@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { MapPin, Search } from "lucide-react";
+import { MapPin, Search, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface LocationSelectorProps {
     onLocationFound: (lat: number, lng: number, name: string) => void;
@@ -40,21 +41,16 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
         setError("");
 
         try {
-            // Using OpenStreetMap Nominatim API (Free, requires User-Agent)
             const res = await fetch(
                 `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
                     manualCity
                 )}&limit=1`,
-                {
-                    headers: {
-                        "User-Agent": "ShkiaClock/1.0"
-                    }
-                }
+                { headers: { "User-Agent": "ShkiaClock/1.0" } }
             );
             const data = await res.json();
 
             if (data && data.length > 0) {
-                onLocationFound(parseFloat(data[0].lat), parseFloat(data[0].lon), data[0].display_name);
+                onLocationFound(parseFloat(data[0].lat), parseFloat(data[0].lon), data[0].display_name.split(',')[0]);
             } else {
                 setError("City not found");
             }
@@ -66,45 +62,54 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
     };
 
     return (
-        <div className="flex flex-col items-center space-y-4 p-6 bg-white rounded-lg shadow-md max-w-md w-full">
-            <h2 className="text-2xl font-bold mb-4">Set Location</h2>
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass-panel p-8 rounded-2xl w-full max-w-md text-white"
+        >
+            <h2 className="text-3xl font-bold mb-6 text-center tracking-tight">Set Location</h2>
 
             <button
                 onClick={handleGeolocation}
                 disabled={loading}
-                className="flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 w-full disabled:opacity-50"
+                className="flex items-center justify-center space-x-2 w-full py-3 bg-blue-600 hover:bg-blue-500 transition-all rounded-xl font-medium shadow-lg shadow-blue-900/50 disabled:opacity-50"
             >
-                <MapPin size={20} />
-                <span>Use My Device Location</span>
+                {loading ? <Loader2 className="animate-spin" size={20} /> : <MapPin size={20} />}
+                <span>Auto-Detect Location</span>
             </button>
 
-            <div className="relative flex py-2 items-center w-full">
-                <div className="flex-grow border-t border-gray-300"></div>
-                <span className="flex-shrink mx-4 text-gray-400">OR</span>
-                <div className="flex-grow border-t border-gray-300"></div>
+            <div className="relative flex py-6 items-center w-full">
+                <div className="flex-grow border-t border-white/20"></div>
+                <span className="flex-shrink mx-4 text-white/40 text-sm tracking-widest uppercase">Or Enter City</span>
+                <div className="flex-grow border-t border-white/20"></div>
             </div>
 
-            <form onSubmit={handleManualSearch} className="w-full space-y-2">
-                <div className="flex space-x-2">
-                    <input
-                        type="text"
-                        placeholder="Enter City (e.g., Brooklyn, NY)"
-                        value={manualCity}
-                        onChange={(e) => setManualCity(e.target.value)}
-                        className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-                    />
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="bg-green-600 text-white p-2 rounded-md hover:bg-green-700 disabled:opacity-50"
-                    >
-                        <Search size={20} />
-                    </button>
-                </div>
+            <form onSubmit={handleManualSearch} className="w-full relative">
+                <input
+                    type="text"
+                    placeholder="New York, Jerusalem, London..."
+                    value={manualCity}
+                    onChange={(e) => setManualCity(e.target.value)}
+                    className="w-full p-4 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-white/30 transition-all"
+                />
+                <button
+                    type="submit"
+                    disabled={loading}
+                    className="absolute right-2 top-2 bottom-2 aspect-square flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-lg text-white transition-colors disabled:opacity-50"
+                >
+                    {loading ? <Loader2 className="animate-spin" size={20} /> : <Search size={20} />}
+                </button>
             </form>
 
-            {error && <p className="text-red-500 text-sm">{error}</p>}
-            {loading && <p className="text-gray-500 text-sm animate-pulse">Locating...</p>}
-        </div>
+            {error && (
+                <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-red-400 text-sm mt-4 text-center bg-red-900/20 p-2 rounded-lg border border-red-500/20"
+                >
+                    {error}
+                </motion.p>
+            )}
+        </motion.div>
     );
 }
