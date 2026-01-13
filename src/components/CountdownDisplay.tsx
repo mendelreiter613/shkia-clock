@@ -17,13 +17,77 @@ function formatTimeLeft(ms: number) {
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
     const pad = (n: number) => n.toString().padStart(2, "0");
-    return { 
+    return {
         hours: pad(hours),
         minutes: pad(minutes),
         seconds: pad(seconds),
         isUrgent: totalSeconds < 900,
         isCritical: totalSeconds < 300
     };
+}
+
+// Dynamic messages based on day of week and current hour
+function getDynamicMessage(currentHour: number, dayOfWeek: number): string {
+    const messages: { [key: number]: { [key: string]: string } } = {
+        0: { // Sunday
+            "morning": "Plenty of time to daven Shachris! Start your week right! 🌅",
+            "afternoon": "Good afternoon! Still time to daven before shkia 🙏",
+            "evening": "Getting closer! Make time for davening 🕐",
+            "night": "Late night! Daven Shachris soon ⏰"
+        },
+        1: { // Monday
+            "morning": "Start your Monday with davening! You have time 🌄",
+            "afternoon": "Afternoon reminder: Daven before shkia today 📿",
+            "evening": "Don't wait! Shkia is getting closer 🕒",
+            "night": "Late night! Time to daven Shachris ⏰"
+        },
+        2: { // Tuesday
+            "morning": "Beautiful Tuesday morning! Time for Shachris 🌞",
+            "afternoon": "Afternoon check-in: Remember to daven! 🙏",
+            "evening": "Time is short! Get to davening 🕐",
+            "night": "Late night! Daven Shachris soon ⏰"
+        },
+        3: { // Wednesday
+            "morning": "Midweek blessing! Plenty of time to daven 🌅",
+            "afternoon": "Afternoon davening reminder 📿",
+            "evening": "Getting late! Daven soon 🕒",
+            "night": "Late night! Time for Shachris ⏰"
+        },
+        4: { // Thursday
+            "morning": "Thursday morning! Start with davening 🌄",
+            "afternoon": "Good time to daven Shachris 🙏",
+            "evening": "Time running out! Daven soon 🕐",
+            "night": "Late night! Daven Shachris soon ⏰"
+        },
+        5: { // Friday - Erev Shabbos
+            "morning": "Erev Shabbos! Daven early, prepare for Shabbos 🕯️",
+            "afternoon": "Friday afternoon! Daven before Shabbos prep 📿",
+            "evening": "Erev Shabbos rush! Daven quickly! 🕒",
+            "night": "Late Erev Shabbos! Prepare for Shabbos 🕯️"
+        },
+        6: { // Shabbos
+            "morning": "Shabbos Shalom! Enjoy your day of rest 🕊️",
+            "afternoon": "Peaceful Shabbos afternoon 🌟",
+            "evening": "Shabbos winding down... 🌅",
+            "night": "Shabbos night... ✨"
+        }
+    };
+
+    const dayMessages = messages[dayOfWeek];
+
+    // Determine time of day based on current hour
+    let timeOfDay: string;
+    if (currentHour >= 6 && currentHour < 12) {
+        timeOfDay = "morning";  // 6 AM - 12 PM
+    } else if (currentHour >= 12 && currentHour < 17) {
+        timeOfDay = "afternoon";  // 12 PM - 5 PM
+    } else if (currentHour >= 17 && currentHour < 21) {
+        timeOfDay = "evening";  // 5 PM - 9 PM
+    } else {
+        timeOfDay = "night";  // 9 PM - 6 AM
+    }
+
+    return dayMessages[timeOfDay];
 }
 
 export default function CountdownDisplay({ zmanim, locationName, onReset }: CountdownDisplayProps) {
@@ -41,27 +105,33 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
     const { shkia, sunriseToday, sunsetToday } = zmanim;
     const msToShkia = shkia.getTime() - now.getTime();
     const time = formatTimeLeft(msToShkia);
-    
-    const statusConfig = time.isCritical 
-        ? { message: "Shkia is approaching", color: "red", glow: "rgba(239, 68, 68, 0.4)" }
-        : time.isUrgent 
-        ? { message: "Shkia is imminent", color: "amber", glow: "rgba(251, 191, 36, 0.4)" }
-        : { message: "You have plenty of time", color: "emerald", glow: "rgba(16, 185, 129, 0.4)" };
+    const hoursLeft = msToShkia / 1000 / 60 / 60;
+    const dayOfWeek = now.getDay();
+    const currentHour = now.getHours();
+
+    // Get dynamic message based on current hour and day (not hours left!)
+    const dynamicMessage = getDynamicMessage(currentHour, dayOfWeek);
+
+    const statusConfig = time.isCritical
+        ? { message: dynamicMessage, color: "red", glow: "rgba(239, 68, 68, 0.4)" }
+        : time.isUrgent
+            ? { message: dynamicMessage, color: "amber", glow: "rgba(251, 191, 36, 0.4)" }
+            : { message: dynamicMessage, color: "emerald", glow: "rgba(16, 185, 129, 0.4)" };
 
     return (
         <div className="flex flex-col h-screen w-full relative overflow-hidden">
-            
+
             {/* Animated Background Orbs */}
             <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-float" />
             <div className="absolute bottom-1/4 right-1/3 w-80 h-80 bg-purple-500/15 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
-            
+
             {/* Header */}
-            <motion.div 
+            <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="w-full flex justify-between items-start z-20 p-8"
             >
-                <motion.div 
+                <motion.div
                     whileHover={{ scale: 1.05 }}
                     className="flex items-center gap-3 glass-badge px-5 py-3 rounded-full cursor-default"
                 >
@@ -71,7 +141,7 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                     </span>
                 </motion.div>
 
-                <motion.button 
+                <motion.button
                     whileHover={{ scale: 1.1, rotate: 90 }}
                     whileTap={{ scale: 0.9 }}
                     onClick={onReset}
@@ -84,7 +154,7 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
 
             {/* Main Clock Display */}
             <div className="flex-1 flex flex-col items-center justify-center z-10 px-6">
-                
+
                 {/* Label with Icon */}
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
@@ -98,20 +168,20 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                 </motion.div>
 
                 {/* The Clock - Massive and Glowing */}
-                <motion.div 
+                <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                     className="relative"
                 >
                     {/* Glow effect behind numbers */}
-                    <div 
+                    <div
                         className="absolute inset-0 blur-3xl opacity-30"
-                        style={{ 
+                        style={{
                             background: `radial-gradient(circle, ${statusConfig.glow} 0%, transparent 70%)`
                         }}
                     />
-                    
+
                     <div className="font-clock text-white font-light leading-none tracking-[0.1em] flex items-center gap-4 relative">
                         <AnimatePresence mode="wait">
                             <motion.span
@@ -119,14 +189,14 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                                 initial={{ y: 20, opacity: 0 }}
                                 animate={{ y: 0, opacity: 1 }}
                                 exit={{ y: -20, opacity: 0 }}
-                                className="text-[clamp(4rem,15vw,12rem)] glow-text"
+                                className="text-[clamp(3rem,12vw,10rem)] md:text-[clamp(4rem,15vw,12rem)] glow-text"
                             >
                                 {time.hours}
                             </motion.span>
                         </AnimatePresence>
-                        
+
                         <span className="text-[clamp(3rem,12vw,10rem)] text-white/20 animate-pulse">:</span>
-                        
+
                         <AnimatePresence mode="wait">
                             <motion.span
                                 key={time.minutes}
@@ -138,16 +208,16 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                                 {time.minutes}
                             </motion.span>
                         </AnimatePresence>
-                        
+
                         <span className="text-[clamp(3rem,12vw,10rem)] text-white/20 animate-pulse">:</span>
-                        
+
                         <AnimatePresence mode="wait">
                             <motion.span
                                 key={time.seconds}
                                 initial={{ y: 20, opacity: 0 }}
                                 animate={{ y: 0, opacity: 1 }}
                                 exit={{ y: -20, opacity: 0 }}
-                                className="text-[clamp(3rem,12vw,9rem)] text-white/70"
+                                className="text-[clamp(2.5rem,10vw,8rem)] md:text-[clamp(3rem,12vw,9rem)] text-white/70"
                             >
                                 {time.seconds}
                             </motion.span>
@@ -156,28 +226,25 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                 </motion.div>
 
                 {/* Status Badge - Enhanced */}
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
-                    className={`mt-16 px-8 py-4 rounded-full glass-badge flex items-center gap-4 ${
-                        time.isCritical ? 'border-red-500/30' : 
-                        time.isUrgent ? 'border-amber-500/30' : 
-                        'border-emerald-500/20'
-                    }`}
+                    className={`mt-16 px-8 py-4 rounded-full glass-badge flex items-center gap-4 ${time.isCritical ? 'border-red-500/30' :
+                        time.isUrgent ? 'border-amber-500/30' :
+                            'border-emerald-500/20'
+                        }`}
                 >
-                    <div className={`relative w-3 h-3 rounded-full ${
-                        time.isCritical ? 'bg-red-500' : 
-                        time.isUrgent ? 'bg-amber-500' : 
-                        'bg-emerald-400'
-                    }`}>
+                    <div className={`relative w-3 h-3 rounded-full ${time.isCritical ? 'bg-red-500' :
+                        time.isUrgent ? 'bg-amber-500' :
+                            'bg-emerald-400'
+                        }`}>
                         {(time.isUrgent || time.isCritical) && (
                             <motion.div
                                 animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
                                 transition={{ duration: 2, repeat: Infinity }}
-                                className={`absolute inset-0 rounded-full ${
-                                    time.isCritical ? 'bg-red-500' : 'bg-amber-500'
-                                }`}
+                                className={`absolute inset-0 rounded-full ${time.isCritical ? 'bg-red-500' : 'bg-amber-500'
+                                    }`}
                             />
                         )}
                     </div>
@@ -189,13 +256,13 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
             </div>
 
             {/* Footer Info Bar - Modern Cards */}
-            <motion.div 
+            <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
                 className="flex justify-center items-center gap-8 pb-10 z-20 px-6"
             >
-                
+
                 {/* Sunrise Card */}
                 <div className="glass-badge px-6 py-4 rounded-2xl flex items-center gap-4 min-w-[160px]">
                     <div className="p-3 bg-gradient-to-br from-orange-500/20 to-yellow-500/20 rounded-xl">
@@ -228,7 +295,7 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                         </p>
                     </div>
                 </div>
-                
+
             </motion.div>
         </div>
     );
