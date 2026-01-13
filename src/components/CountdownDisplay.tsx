@@ -118,6 +118,18 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
     const hourPart = parts.find(part => part.type === 'hour');
     const currentHour = hourPart ? parseInt(hourPart.value) : 0;
 
+    // Calculate sun position (0 to 100%)
+    const totalDaylightValues = sunsetToday.getTime() - sunriseToday.getTime();
+    const elapsedDaylight = now.getTime() - sunriseToday.getTime();
+    let sunProgress = (elapsedDaylight / totalDaylightValues) * 100;
+
+    // Clamp to 0-100 (sun stays at horizon before sunrise/after sunset)
+    sunProgress = Math.max(0, Math.min(100, sunProgress));
+
+    // Calculate Sun arc (height) - Peak at 50%
+    const sunHeight = Math.sin((sunProgress / 100) * Math.PI) * 150; // 150px peak height modification
+    const isNight = now.getTime() > sunsetToday.getTime() || now.getTime() < sunriseToday.getTime();
+
     // Get dynamic message based on current hour and day (not hours left!)
     const dynamicMessage = getDynamicMessage(currentHour, dayOfWeek);
 
@@ -131,8 +143,34 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
         <div className="flex flex-col h-screen w-full relative overflow-hidden">
 
             {/* Animated Background Orbs */}
-            <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-float" />
-            <div className="absolute bottom-1/4 right-1/3 w-80 h-80 bg-purple-500/15 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
+            <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-float" />
+            <div className="absolute bottom-1/4 right-1/3 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
+
+            {/* DYNAMIC SUN ORB */}
+            <AnimatePresence>
+                {!isNight && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0 }}
+                        animate={{
+                            opacity: 1,
+                            scale: 1,
+                            left: `${sunProgress}%`,
+                            bottom: `${20 + (sunHeight / 5)}%` // Dynamic height
+                        }}
+                        exit={{ opacity: 0, scale: 0 }}
+                        transition={{ duration: 1, ease: "linear" }}
+                        className="absolute w-24 h-24 rounded-full z-0 blur-xl pointer-events-none"
+                        style={{
+                            background: `radial-gradient(circle, ${sunProgress > 85 ? '#f97316' : '#facc15'} 0%, transparent 70%)`,
+                            boxShadow: `0 0 ${sunProgress > 85 ? '60px' : '100px'} ${sunProgress > 85 ? 'rgba(249, 115, 22, 0.6)' : 'rgba(250, 204, 21, 0.4)'}`,
+                            transform: 'translate(-50%, 50%)'
+                        }}
+                    >
+                        {/* Core of the sun */}
+                        <div className="absolute inset-4 bg-white rounded-full opacity-80 blur-md" />
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Header */}
             <motion.div
