@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
 import { ZmanimData } from "@/lib/zmanim";
 
@@ -17,7 +17,10 @@ function formatTimeLeft(ms: number) {
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
     const pad = (n: number) => n.toString().padStart(2, "0");
-    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    return {
+        text: `${hours}:${pad(minutes)}:${pad(seconds)}`,
+        isUrgent: totalSeconds < 900 // Less than 15 mins
+    };
 }
 
 export default function CountdownDisplay({ zmanim, locationName, onReset }: CountdownDisplayProps) {
@@ -34,121 +37,89 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
 
     const { shkia, sunriseToday, sunsetToday } = zmanim;
     const msToShkia = shkia.getTime() - now.getTime();
-    const minutesLeft = msToShkia / 1000 / 60;
+    
+    // Sun Position Logic (0 to 100%)
+    const dayLength = sunsetToday.getTime() - sunriseToday.getTime();
+    const elapsed = now.getTime() - sunriseToday.getTime();
+    const percent = Math.max(0, Math.min(1, elapsed / dayLength));
 
-    // Calculate sun position
-    const dayDuration = sunsetToday.getTime() - sunriseToday.getTime();
-    const elapsedTime = now.getTime() - sunriseToday.getTime();
-    let sunPercent = Math.max(0, Math.min(1.1, elapsedTime / dayDuration));
-
-    const sunX = sunPercent * 100;
-
-    // Status message based on time remaining
-    let statusMessage = "YOU HAVE PLENTY OF TIME.";
-    let statusColor = "text-white/80";
-
-    if (minutesLeft <= 5 && minutesLeft > 0) {
-        statusMessage = "SHKIA IS IMMINENT!";
-        statusColor = "text-red-400 animate-pulse";
-    } else if (minutesLeft <= 15 && minutesLeft > 0) {
-        statusMessage = "TIME IS RUNNING OUT.";
-        statusColor = "text-orange-400";
-    } else if (minutesLeft <= 30 && minutesLeft > 0) {
-        statusMessage = "SHKIA IS APPROACHING.";
-        statusColor = "text-yellow-400";
-    } else if (minutesLeft <= 0) {
-        statusMessage = "SHKIA HAS PASSED.";
-        statusColor = "text-gray-400";
-    }
+    const timeDisplay = formatTimeLeft(msToShkia);
 
     return (
-        <div className="fixed inset-0 w-full h-full bg-black overflow-hidden">
+        <div className="relative w-full h-screen flex flex-col items-center justify-between p-6 z-10 overflow-hidden">
+            
+            {/* Background Sun Arc Visualization (Decorative) */}
+            <div className="absolute inset-x-0 bottom-0 h-[60vh] opacity-20 pointer-events-none">
+                 {/* The Track */}
+                <svg className="w-full h-full" preserveAspectRatio="none">
+                    <path d="M 0,400 Q 50,-100 1000,400" vectorEffect="non-scaling-stroke" stroke="white" strokeWidth="2" fill="none" className="opacity-30" />
+                </svg>
+            </div>
 
-            {/* Top Bar */}
-            <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-6 z-30">
-                {/* Logo */}
-                <div className="flex items-center gap-2 text-white">
-                    <div className="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center">
-                        <div className="w-3 h-3 rounded-full bg-white"></div>
-                    </div>
-                    <span className="text-xl font-bold tracking-tight">SHKIA CLOCK</span>
+            {/* Top Navigation */}
+            <div className="w-full flex justify-between items-center z-20">
+                <div className="flex items-center gap-2 text-white/60 bg-white/5 px-4 py-2 rounded-full border border-white/5">
+                    <MapPin size={14} />
+                    <span className="text-xs font-medium tracking-wider uppercase">{locationName}</span>
                 </div>
-
-                {/* Search/Change Location */}
-                <button
+                <button 
                     onClick={onReset}
-                    className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white/70 hover:text-white transition-all"
+                    className="p-3 rounded-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all border border-white/5"
                 >
-                    <Search size={16} />
-                    <span className="text-sm">Search city...</span>
+                    <Search size={18} />
                 </button>
             </div>
 
-            {/* Sun */}
-            <motion.div
-                className="absolute top-16 rounded-full"
-                style={{
-                    left: `calc(${sunX}% - 80px)`,
-                    width: '160px',
-                    height: '160px',
-                    background: 'radial-gradient(circle, #FFD700 0%, #FFA500 50%, transparent 70%)',
-                    boxShadow: '0 0 120px 60px rgba(255, 215, 0, 0.6)',
-                    zIndex: 5
-                }}
-            />
+            {/* Main Timer Content */}
+            <div className="flex-1 flex flex-col items-center justify-center relative w-full">
+                
+                {/* The Sun Orb */}
+                <motion.div 
+                    className="absolute w-64 h-64 rounded-full blur-[80px] -z-10 transition-colors duration-1000"
+                    style={{
+                        background: timeDisplay.isUrgent ? 'rgba(255, 69, 0, 0.4)' : 'rgba(255, 200, 0, 0.15)',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)'
+                    }}
+                />
 
-            {/* Main Content */}
-            <div className="relative z-10 h-full flex flex-col items-center justify-center px-6">
-
-                {/* Label */}
-                <div className="mb-4">
-                    <p className="text-white/50 text-sm md:text-base uppercase tracking-[0.3em] text-center">
-                        TIME UNTIL SHKIA • {locationName.toUpperCase()}
-                    </p>
-                </div>
-
-                {/* Timer */}
-                <div className="mb-8">
-                    <h1
-                        className="font-mono-digital text-[18vw] sm:text-[140px] md:text-[180px] lg:text-[220px] leading-none text-white tracking-tight"
-                        style={{ fontVariantNumeric: 'tabular-nums' }}
-                    >
-                        {formatTimeLeft(msToShkia)}
+                <div className="text-center">
+                    <h2 className="text-white/40 text-sm md:text-base tracking-[0.4em] uppercase mb-4">Time Until Sunset</h2>
+                    <h1 className={`font-mono-digital text-7xl sm:text-9xl md:text-[10rem] font-bold tracking-tighter leading-none ${timeDisplay.isUrgent ? 'text-red-200 animate-pulse' : 'text-white'}`}>
+                        {timeDisplay.text}
                     </h1>
                 </div>
 
-                {/* Status Pill */}
-                <div className="mb-16">
-                    <div className="flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 rounded-full">
-                        <div className="w-2 h-2 rounded-full bg-white/60"></div>
-                        <span className={`text-sm md:text-base font-medium tracking-wide ${statusColor}`}>
-                            {statusMessage}
-                        </span>
-                    </div>
-                </div>
-
-                {/* Sunrise/Sunset */}
-                <div className="flex items-center gap-16 md:gap-24">
-                    <div className="text-center">
-                        <p className="text-white/40 text-xs md:text-sm uppercase tracking-[0.2em] mb-2">Sunrise</p>
-                        <p className="text-white text-lg md:text-2xl font-light">
-                            {sunriseToday.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                    </div>
-                    <div className="text-center">
-                        <p className="text-white/40 text-xs md:text-sm uppercase tracking-[0.2em] mb-2">Shkia</p>
-                        <p className="text-white text-lg md:text-2xl font-light">
-                            {sunsetToday.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                    </div>
+                {/* Progress Bar (Visual Indicator) */}
+                <div className="w-full max-w-md mt-12 h-1 bg-white/10 rounded-full overflow-hidden">
+                    <motion.div 
+                        className="h-full bg-gradient-to-r from-orange-500 to-purple-500"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${percent * 100}%` }}
+                        transition={{ ease: "linear", duration: 1 }}
+                    />
                 </div>
             </div>
 
-            {/* Footer */}
-            <div className="absolute bottom-6 left-0 right-0 text-center">
-                <p className="text-white/30 text-xs uppercase tracking-[0.2em]">
-                    Based on Hebcal Halachic Algorithms • Use with caution for halachic decisions
-                </p>
+            {/* Footer Data Grid */}
+            <div className="w-full max-w-4xl glass-panel rounded-2xl p-6 grid grid-cols-2 md:grid-cols-4 gap-4 z-20">
+                <div className="text-center border-r border-white/5 last:border-0">
+                    <p className="text-white/30 text-[10px] uppercase tracking-widest mb-1">Sunrise</p>
+                    <p className="text-white font-medium">{sunriseToday.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+                <div className="text-center border-r border-white/5 last:border-0 md:border-r">
+                    <p className="text-white/30 text-[10px] uppercase tracking-widest mb-1">Sunset</p>
+                    <p className="text-white font-medium">{sunsetToday.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+                <div className="text-center border-r border-white/5 last:border-0 hidden md:block">
+                    <p className="text-white/30 text-[10px] uppercase tracking-widest mb-1">Day Length</p>
+                    <p className="text-white font-medium">{Math.floor(dayLength / 1000 / 60 / 60)}h {Math.floor((dayLength / 1000 / 60) % 60)}m</p>
+                </div>
+                <div className="text-center hidden md:block">
+                    <p className="text-white/30 text-[10px] uppercase tracking-widest mb-1">Halacha Source</p>
+                    <p className="text-white/60 text-xs mt-1">Hebcal</p>
+                </div>
             </div>
         </div>
     );
