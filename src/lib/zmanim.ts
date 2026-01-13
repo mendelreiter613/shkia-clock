@@ -1,44 +1,58 @@
 
 import { getZmanimJson } from "kosher-zmanim";
 
-export function getComingShkia(lat: number, lng: number, timeZone: string): Date | null {
+export interface ZmanimData {
+    shkia: Date; // The target countdown time (could be tomorrow's shkia)
+    sunriseToday: Date; // For visual sun cycle
+    sunsetToday: Date; // For visual sun cycle
+}
+
+export function getZmanimData(lat: number, lng: number, timeZone: string): ZmanimData | null {
     try {
+        const now = new Date();
         const options = {
-            date: new Date(),
+            date: now,
             latitude: lat,
             longitude: lng,
             timeZoneId: timeZone,
         };
 
-        // getZmanimJson returns an object with metadata and separate zmanim objects
-        // We check BasicZmanim or valid keys for Sunset.
-        // The library handles constructing the calendar internally.
         let data: any = getZmanimJson(options);
 
-        const getSunset = (d: any) => {
-            return d?.BasicZmanim?.Sunset || d?.Zmanim?.Sunset || d?.Sunset;
+        const getZman = (d: any, key: string) => {
+            // Handle various casing/structure from the library
+            return d?.BasicZmanim?.[key] || d?.Zmanim?.[key] || d?.[key.toLowerCase()] || d?.[key];
         }
 
-        let shkiaString = getSunset(data);
+        let sunriseString = getZman(data, "Sunrise");
+        let sunsetString = getZman(data, "Sunset");
 
-        if (!shkiaString) return null;
+        if (!sunriseString || !sunsetString) return null;
 
-        let shkiaDate = new Date(shkiaString);
-        const now = new Date();
+        let sunriseToday = new Date(sunriseString);
+        let sunsetToday = new Date(sunsetString);
 
-        if (shkiaDate.getTime() < now.getTime()) {
-            // Get tomorrow
+        // Determine the target Shkia for countdown
+        let targetShkia = new Date(sunsetToday);
+
+        if (now.getTime() > targetShkia.getTime()) {
+            // If passed sunset, get tomorrow's sunset for the countdown target
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             options.date = tomorrow;
-            data = getZmanimJson(options);
-            shkiaString = getSunset(data);
-            if (shkiaString) {
-                shkiaDate = new Date(shkiaString);
+            const tomorrowData = getZmanimJson(options);
+            const nextSunsetStr = getZman(tomorrowData, "Sunset");
+            if (nextSunsetStr) {
+                targetShkia = new Date(nextSunsetStr);
             }
         }
 
-        return shkiaDate;
+        return {
+            shkia: targetShkia,
+            sunriseToday,
+            sunsetToday
+        };
+
     } catch (e) {
         console.error("Zmanim Error:", e);
         return null;
