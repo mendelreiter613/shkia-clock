@@ -21,7 +21,7 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
     const [loading, setLoading] = useState(false);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [error, setError] = useState("");
-    const searchTimeout = useRef<NodeJS.Timeout>();
+    const searchTimeout = useRef<NodeJS.Timeout | undefined>(undefined);
 
     useEffect(() => {
         if (searchQuery.length < 2) {
@@ -85,10 +85,10 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
 
     return (
         <div className="flex items-center justify-center min-h-screen p-4">
-            
-            <motion.div 
-                initial={{ opacity: 0, scale: 0.9 }} 
-                animate={{ opacity: 1, scale: 1 }} 
+
+            <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
                 className="w-full max-w-md glass-card rounded-3xl p-8 relative z-10"
             >
                 {/* Header */}
