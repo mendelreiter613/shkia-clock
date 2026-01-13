@@ -5,6 +5,7 @@ import LocationSelector from "@/components/LocationSelector";
 import CountdownDisplay from "@/components/CountdownDisplay";
 import { getZmanimData, ZmanimData } from "@/lib/zmanim";
 import { AnimatePresence, motion } from "framer-motion";
+import tz from "tz-lookup";
 
 export default function Home() {
   const [location, setLocation] = useState<{ lat: number, lng: number, name: string } | null>(null);
@@ -12,7 +13,8 @@ export default function Home() {
 
   const handleLocationFound = (lat: number, lng: number, name: string) => {
     setLocation({ lat, lng, name });
-    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    // Get actual timezone from coordinates using tz-lookup
+    const timeZone = tz(lat, lng);
     const data = getZmanimData(lat, lng, timeZone);
     setZmanim(data);
   };
@@ -35,10 +37,10 @@ export default function Home() {
             transition={{ duration: 0.6, ease: "easeOut" }}
             className="w-full h-full"
           >
-            <CountdownDisplay 
-              zmanim={zmanim} 
-              locationName={location.name} 
-              onReset={handleReset} 
+            <CountdownDisplay
+              zmanim={zmanim}
+              locationName={location.name}
+              onReset={handleReset}
             />
           </motion.div>
         ) : (
