@@ -24,8 +24,8 @@ export default function Home() {
   };
 
   return (
-    // UPDATED: Removed bg-deep-atmosphere to let the 3D background shine
-    <main className="min-h-screen bg-slate-950 relative selection:bg-white/20 overflow-hidden">
+    // FIXED: h-[100dvh] prevents mobile cutoff
+    <main className="h-[100dvh] w-full bg-slate-950 relative selection:bg-white/20 overflow-hidden">
       <AnimatePresence mode="wait">
         {location && zmanim ? (
           <motion.div
@@ -49,7 +49,7 @@ export default function Home() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, filter: 'blur(10px)' }}
             transition={{ duration: 0.5 }}
-            className="w-full h-full bg-deep-atmosphere" // Keep atmosphere only for selector screen
+            className="w-full h-full bg-deep-atmosphere"
           >
             <LocationSelector onLocationFound={handleLocationFound} />
           </motion.div>
