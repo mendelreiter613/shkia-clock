@@ -5,7 +5,7 @@ import { Search, MapPin, Clock, AlertTriangle } from "lucide-react";
 import { ZmanimData } from "@/lib/zmanim";
 import { motion } from "framer-motion";
 import { getDynamicMessage } from "@/lib/messages";
-import AtmosphereBackground from "./AtmosphereBackground";
+import SpaceBackground from "./SpaceBackground";
 
 interface CountdownDisplayProps {
     zmanim: ZmanimData;
@@ -121,13 +121,10 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
     return (
         <div className={`flex flex-col h-screen w-full relative overflow-hidden transition-colors duration-1000 ${time.isCritical ? 'animate-alarm bg-red-950/20' : ''}`}>
 
-            {/* Background Scene */}
-            <AtmosphereBackground
+            {/* 3D Starfield Background */}
+            <SpaceBackground
                 sunProgress={sunProgress}
                 isNight={isNight}
-                sunBottomPosition={sunBottomPosition}
-                skyGradient={skyGradient}
-                oceanGradient={oceanGradient}
             />
 
             {/* --- UI OVERLAY --- */}
