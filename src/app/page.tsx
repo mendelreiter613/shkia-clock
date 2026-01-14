@@ -13,7 +13,6 @@ export default function Home() {
 
   const handleLocationFound = (lat: number, lng: number, name: string) => {
     setLocation({ lat, lng, name });
-    // Get actual timezone from coordinates using tz-lookup
     const timeZone = tz(lat, lng);
     const data = getZmanimData(lat, lng, timeZone);
     setZmanim(data);
@@ -25,8 +24,8 @@ export default function Home() {
   };
 
   return (
-    // Applied the new Deep Radial Gradient
-    <main className="min-h-screen bg-deep-atmosphere relative selection:bg-white/20">
+    // UPDATED: Removed bg-deep-atmosphere to let the 3D background shine
+    <main className="min-h-screen bg-slate-950 relative selection:bg-white/20 overflow-hidden">
       <AnimatePresence mode="wait">
         {location && zmanim ? (
           <motion.div
@@ -50,7 +49,7 @@ export default function Home() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, filter: 'blur(10px)' }}
             transition={{ duration: 0.5 }}
-            className="w-full h-full"
+            className="w-full h-full bg-deep-atmosphere" // Keep atmosphere only for selector screen
           >
             <LocationSelector onLocationFound={handleLocationFound} />
           </motion.div>
