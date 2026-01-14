@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Search, MapPin, Sunrise, Sunset, Clock } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { Search, MapPin, Sunrise, Sunset, Clock, AlertTriangle } from "lucide-react";
 import { ZmanimData } from "@/lib/zmanim";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -21,8 +21,9 @@ function formatTimeLeft(ms: number) {
         hours: pad(hours),
         minutes: pad(minutes),
         seconds: pad(seconds),
+        totalSeconds, // Exposed for logic
         isUrgent: totalSeconds < 900,
-        isCritical: totalSeconds < 300
+        isCritical: totalSeconds < 60
     };
 }
 
@@ -63,7 +64,7 @@ function getDynamicMessage(currentHour: number, dayOfWeek: number): string {
             "morning": "Erev Shabbos! Daven early, prepare for Shabbos 🕯️",
             "afternoon": "Friday afternoon! Daven before Shabbos prep 📿",
             "evening": "Erev Shabbos rush! Daven quickly! 🕒",
-            "night": "Late Erev Shabbos! Prepare for Shabbos 🕯️"
+            "night": "Late night! Late Erev Shabbos! Prepare for Shabbos 🕯️"
         },
         6: { // Shabbos
             "morning": "Shabbos Shalom! Enjoy your day of rest 🕊️",
@@ -93,22 +94,52 @@ function getDynamicMessage(currentHour: number, dayOfWeek: number): string {
 export default function CountdownDisplay({ zmanim, locationName, onReset }: CountdownDisplayProps) {
     const [now, setNow] = useState(new Date());
     const [mounted, setMounted] = useState(false);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
         setMounted(true);
         const interval = setInterval(() => setNow(new Date()), 1000);
-        return () => clearInterval(interval);
-    }, []);
 
-    if (!mounted) return null;
+        // Initialize Audio
+        audioRef.current = new Audio('/alarm.mp3');
+        audioRef.current.loop = true;
+
+        return () => {
+            clearInterval(interval);
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current = null;
+            }
+        };
+    }, []);
 
     const { shkia, sunriseToday, sunsetToday, timeZone } = zmanim;
     const msToShkia = shkia.getTime() - now.getTime();
     const time = formatTimeLeft(msToShkia);
-    const hoursLeft = msToShkia / 1000 / 60 / 60;
     const dayOfWeek = now.getDay();
 
-    // Get current hour in the LOCATION'S timezone (not browser's timezone)
+    // Audio Logic
+    useEffect(() => {
+        if (!audioRef.current) return;
+
+        if (time.isCritical && time.totalSeconds > 0) {
+            // Play if not already playing
+            if (audioRef.current.paused) {
+                audioRef.current.play().catch(e => console.log("Audio play blocked", e));
+            }
+        } else {
+            // Stop logic
+            if (!audioRef.current.paused) {
+                audioRef.current.pause();
+                audioRef.current.currentTime = 0;
+            }
+        }
+    }, [time.isCritical, time.totalSeconds]);
+
+
+    if (!mounted) return null;
+
+    // Get current hour in the LOCATION'S timezone
     const formatter = new Intl.DateTimeFormat('en-US', {
         timeZone: timeZone,
         hour: 'numeric',
@@ -123,228 +154,188 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
     const elapsedDaylight = now.getTime() - sunriseToday.getTime();
     let sunProgress = (elapsedDaylight / totalDaylightValues) * 100;
 
-    // Clamp to 0-100 (sun stays at horizon before sunrise/after sunset)
+    // Clamp to 0-100
     sunProgress = Math.max(0, Math.min(100, sunProgress));
 
     // Calculate Sun arc (height) - Peak at 50%
-    const sunHeight = Math.sin((sunProgress / 100) * Math.PI) * 150; // 150px peak height modification
-    const isNight = now.getTime() > sunsetToday.getTime() || now.getTime() < sunriseToday.getTime();
+    // Horizon is at 35% from bottom, so max height should be relative to that
+    const sunArcHeight = Math.sin((sunProgress / 100) * Math.PI) * 45; // 45% of screen height
+    const sunBottomPosition = 35 + sunArcHeight; // Base ocean level is 35%
 
-    // Get dynamic message based on current hour and day (not hours left!)
+    // Sky colors based on progress
+    let skyGradient = "";
+    if (sunProgress < 10) skyGradient = "from-indigo-900 via-purple-900 to-orange-200"; // Sunrise
+    else if (sunProgress < 40) skyGradient = "from-blue-500 via-blue-300 to-blue-100"; // Morning
+    else if (sunProgress < 60) skyGradient = "from-blue-600 via-blue-400 to-blue-200"; // Noon
+    else if (sunProgress < 85) skyGradient = "from-blue-500 via-orange-200 to-orange-100"; // Late Afternoon
+    else skyGradient = "from-indigo-900 via-purple-600 to-orange-400"; // Sunset
+
+    // Ocean colors
+    let oceanGradient = "";
+    if (sunProgress < 10 || sunProgress > 85) oceanGradient = "from-indigo-900/80 to-indigo-950";
+    else oceanGradient = "from-blue-600/80 to-blue-900";
+
+    const isNight = now.getTime() > sunsetToday.getTime() || now.getTime() < sunriseToday.getTime();
     const dynamicMessage = getDynamicMessage(currentHour, dayOfWeek);
 
-    const statusConfig = time.isCritical
-        ? { message: dynamicMessage, color: "red", glow: "rgba(239, 68, 68, 0.4)" }
-        : time.isUrgent
-            ? { message: dynamicMessage, color: "amber", glow: "rgba(251, 191, 36, 0.4)" }
-            : { message: dynamicMessage, color: "emerald", glow: "rgba(16, 185, 129, 0.4)" };
-
     return (
-        <div className="flex flex-col h-screen w-full relative overflow-hidden">
+        <div className={`flex flex-col h-screen w-full relative overflow-hidden transition-colors duration-1000 ${time.isCritical ? 'animate-alarm bg-red-950/20' : ''}`}>
 
-            {/* Animated Background Orbs */}
-            <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-float" />
-            <div className="absolute bottom-1/4 right-1/3 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
+            {/* --- BACKGROUND SCENE --- */}
 
-            {/* DYNAMIC SUN ORB */}
+            {/* Sky */}
+            <div className={`absolute inset-0 bg-gradient-to-b ${isNight ? 'from-slate-900 to-slate-800' : skyGradient} transition-all duration-1000 ease-in-out`} />
+
+            {/* Stars (Night only) */}
+            {isNight && (
+                <div className="absolute inset-0 bg-[url('/stars.png')] opacity-50" />
+            )}
+
+            {/* Sun */}
             <AnimatePresence>
                 {!isNight && (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0 }}
-                        animate={{ 
-                            opacity: 1, 
-                            scale: 1,
+                        initial={{ opacity: 0 }}
+                        animate={{
+                            opacity: 1,
                             left: `${sunProgress}%`,
-                            bottom: `${20 + (sunHeight/5)}%` // Dynamic height
+                            bottom: `${sunBottomPosition}%`
                         }}
-                        exit={{ opacity: 0, scale: 0 }}
+                        exit={{ opacity: 0 }}
                         transition={{ duration: 1, ease: "linear" }}
-                        className="absolute w-32 h-32 rounded-full z-0 pointer-events-none" // Removed blur-xl from container, added size
+                        className="absolute w-24 h-24 md:w-40 md:h-40 rounded-full z-10 pointer-events-none transform -translate-x-1/2 translate-y-1/2 shadow-2xl shadow-orange-500/50"
                         style={{
-                            background: `radial-gradient(circle, ${sunProgress > 85 ? '#f97316' : '#facc15'} 20%, transparent 70%)`,
-                            boxShadow: `0 0 ${sunProgress > 85 ? '50px' : '80px'} ${sunProgress > 85 ? 'rgba(249, 115, 22, 0.8)' : 'rgba(250, 204, 21, 0.6)'}`, // Increased opacity
-                            transform: 'translate(-50%, 50%)',
-                            filter: 'blur(8px)' // Reduced blur significantly
+                            background: `radial-gradient(circle, #fbbf24 10%, #f97316 90%)`
                         }}
                     >
-                        {/* Core of the sun - Made solid and bright */}
-                        <div className="absolute inset-8 bg-white rounded-full opacity-100 shadow-[0_0_20px_rgba(255,255,255,0.8)]" />
+                        {/* Sun Glow */}
+                        <div className="absolute inset-0 bg-yellow-400 blur-2xl opacity-40 rounded-full" />
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Ocean */}
+            <div className={`absolute bottom-0 w-full h-[35%] z-20 overflow-hidden backdrop-blur-sm`}>
+                <div className={`absolute inset-0 bg-gradient-to-b ${oceanGradient} opacity-90`} />
+
+                {/* Shimmer Effect */}
+                {!isNight && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer scale-150" />
+                )}
+
+                {/* Sun Reflection */}
+                {!isNight && (
+                    <motion.div
+                        className="absolute h-full w-20 md:w-32 bg-orange-400/20 blur-xl"
+                        animate={{ left: `${sunProgress}%` }}
+                        style={{ transform: 'translateX(-50%)' }}
+                    />
+                )}
+            </div>
+
+
+            {/* --- UI OVERLAY --- */}
 
             {/* Header */}
             <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="w-full flex justify-between items-start z-20 p-8"
+                className="w-full flex justify-between items-start z-30 p-8"
             >
-                <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    className="flex items-center gap-3 glass-badge px-5 py-3 rounded-full cursor-default"
-                >
-                    <MapPin size={16} className="text-blue-400" />
-                    <span className="text-sm font-semibold tracking-wide text-white/90">
+                <div className="flex items-center gap-3 backdrop-blur-md bg-white/10 px-5 py-3 rounded-full border border-white/20 shadow-lg">
+                    <MapPin size={16} className="text-white" />
+                    <span className="text-sm font-semibold tracking-wide text-white shadow-sm">
                         {locationName}
                     </span>
-                </motion.div>
+                </div>
 
-                <motion.button
-                    whileHover={{ scale: 1.1, rotate: 90 }}
-                    whileTap={{ scale: 0.9 }}
+                <button
                     onClick={onReset}
-                    className="p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all backdrop-blur-xl"
+                    className="p-3 rounded-full bg-white/10 border border-white/20 hover:bg-white/20 transition-all backdrop-blur-md shadow-lg"
                     title="Change Location"
                 >
-                    <Search size={20} className="text-white/70" />
-                </motion.button>
+                    <Search size={20} className="text-white" />
+                </button>
             </motion.div>
 
-            {/* Main Clock Display */}
-            <div className="flex-1 flex flex-col items-center justify-center z-10 px-6">
+            {/* Main Content */}
+            <div className="flex-1 flex flex-col items-center justify-center z-30 px-6 pb-20"> {/* pb-20 to account for new horizon */}
 
-                {/* Label with Icon */}
+                {/* Label */}
                 <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-3 mb-12"
+                    className="flex items-center gap-3 mb-8"
+                    animate={{ opacity: time.isCritical ? [1, 0.5, 1] : 1 }}
+                    transition={{ duration: time.isCritical ? 0.5 : 1, repeat: time.isCritical ? Infinity : 0 }}
                 >
-                    <Clock className="w-5 h-5 text-white/40" />
-                    <h2 className="text-white/40 text-sm font-bold tracking-[0.3em] uppercase">
-                        Time Until Shkia
+                    {time.isCritical ? (
+                        <AlertTriangle className="w-6 h-6 text-red-500 animate-bounce" />
+                    ) : (
+                        <Clock className="w-5 h-5 text-white/60" />
+                    )}
+                    <h2 className={`text-sm font-bold tracking-[0.3em] uppercase ${time.isCritical ? 'text-red-400' : 'text-white/60'}`}>
+                        {time.isCritical ? "SHKIA IMMINENT" : "Time Until Shkia"}
                     </h2>
                 </motion.div>
 
-                {/* The Clock - Massive and Glowing */}
-                <motion.div
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                    className="relative"
-                >
-                    {/* Glow effect behind numbers */}
-                    <div
-                        className="absolute inset-0 blur-3xl opacity-30"
-                        style={{
-                            background: `radial-gradient(circle, ${statusConfig.glow} 0%, transparent 70%)`
-                        }}
-                    />
-
-                    <div className="font-clock text-white font-light leading-none tracking-[0.1em] flex items-center gap-4 relative">
-                        <AnimatePresence mode="wait">
-                            <motion.span
-                                key={time.hours}
-                                initial={{ y: 20, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                exit={{ y: -20, opacity: 0 }}
-                                className="text-[clamp(3rem,12vw,10rem)] md:text-[clamp(4rem,15vw,12rem)] glow-text"
-                            >
-                                {time.hours}
-                            </motion.span>
-                        </AnimatePresence>
-
-                        <span className="text-[clamp(3rem,12vw,10rem)] text-white/20 animate-pulse">:</span>
-
-                        <AnimatePresence mode="wait">
-                            <motion.span
-                                key={time.minutes}
-                                initial={{ y: 20, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                exit={{ y: -20, opacity: 0 }}
-                                className="text-[clamp(4rem,15vw,12rem)] glow-text"
-                            >
-                                {time.minutes}
-                            </motion.span>
-                        </AnimatePresence>
-
-                        <span className="text-[clamp(3rem,12vw,10rem)] text-white/20 animate-pulse">:</span>
-
-                        <AnimatePresence mode="wait">
-                            <motion.span
-                                key={time.seconds}
-                                initial={{ y: 20, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                exit={{ y: -20, opacity: 0 }}
-                                className="text-[clamp(2.5rem,10vw,8rem)] md:text-[clamp(3rem,12vw,9rem)] text-white/70"
-                            >
+                {/* THE CLOCK */}
+                <div className="font-clock text-white font-light leading-none tracking-tight relative">
+                    {time.isCritical ? (
+                        // PANIC MODE (Seconds Only)
+                        <motion.div
+                            key="panic"
+                            initial={{ scale: 0.5, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="flex flex-col items-center"
+                        >
+                            <span className="text-[25vw] font-bold text-red-500 drop-shadow-[0_0_50px_rgba(220,38,38,0.8)] tabular-nums">
                                 {time.seconds}
-                            </motion.span>
-                        </AnimatePresence>
-                    </div>
-                </motion.div>
+                            </span>
+                            <span className="text-4xl font-bold text-white/80 mt-[-2rem]">SECONDS</span>
+                        </motion.div>
+                    ) : (
+                        // NORMAL MODE
+                        <motion.div
+                            key="normal"
+                            className="flex items-center gap-4 md:gap-8"
+                        >
+                            <div className="flex flex-col items-center">
+                                <span className="text-[12vw] md:text-[8rem] font-bold drop-shadow-2xl">{time.hours}</span>
+                                <span className="text-sm md:text-xl uppercase tracking-widest opacity-60">Hours</span>
+                            </div>
+                            <span className="text-[8vw] md:text-[6rem] opacity-40 -mt-8">:</span>
+                            <div className="flex flex-col items-center">
+                                <span className="text-[12vw] md:text-[8rem] font-bold drop-shadow-2xl">{time.minutes}</span>
+                                <span className="text-sm md:text-xl uppercase tracking-widest opacity-60">Minutes</span>
+                            </div>
+                            <span className="text-[8vw] md:text-[6rem] opacity-40 -mt-8">:</span>
+                            <div className="flex flex-col items-center">
+                                <span className="text-[12vw] md:text-[8rem] font-light text-white/80 drop-shadow-xl">{time.seconds}</span>
+                                <span className="text-sm md:text-xl uppercase tracking-widest opacity-60">Seconds</span>
+                            </div>
+                        </motion.div>
+                    )}
+                </div>
 
-                {/* Status Badge - Enhanced */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className={`mt-16 px-8 py-4 rounded-full glass-badge flex items-center gap-4 ${time.isCritical ? 'border-red-500/30' :
-                        time.isUrgent ? 'border-amber-500/30' :
-                            'border-emerald-500/20'
-                        }`}
-                >
-                    <div className={`relative w-3 h-3 rounded-full ${time.isCritical ? 'bg-red-500' :
-                        time.isUrgent ? 'bg-amber-500' :
-                            'bg-emerald-400'
-                        }`}>
-                        {(time.isUrgent || time.isCritical) && (
-                            <motion.div
-                                animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
-                                transition={{ duration: 2, repeat: Infinity }}
-                                className={`absolute inset-0 rounded-full ${time.isCritical ? 'bg-red-500' : 'bg-amber-500'
-                                    }`}
-                            />
-                        )}
-                    </div>
-                    <span className="text-white/90 text-base font-semibold tracking-wide">
-                        {statusConfig.message}
-                    </span>
-                </motion.div>
-
+                {/* Message Badge */}
+                {!time.isCritical && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-16 px-8 py-4 rounded-full bg-black/20 backdrop-blur-xl border border-white/10 flex items-center gap-4 shadow-2xl"
+                    >
+                        <span className="text-white/90 text-lg font-medium">
+                            {dynamicMessage}
+                        </span>
+                    </motion.div>
+                )}
             </div>
 
-            {/* Footer Info Bar - Modern Cards */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="flex justify-center items-center gap-8 pb-10 z-20 px-6"
-            >
+            {/* Footer Footer */}
+            <div className="h-[10%] z-30 w-full flex justify-between items-end px-8 pb-8 text-white/50 text-xs font-mono">
+                <div>Sunrise: {sunriseToday.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone })}</div>
+                <div>Sunset: {sunsetToday.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone })}</div>
+            </div>
 
-                {/* Sunrise Card */}
-                <div className="glass-badge px-6 py-4 rounded-2xl flex items-center gap-4 min-w-[160px]">
-                    <div className="p-3 bg-gradient-to-br from-orange-500/20 to-yellow-500/20 rounded-xl">
-                        <Sunrise className="text-orange-400" size={24} strokeWidth={1.5} />
-                    </div>
-                    <div>
-                        <p className="text-white/40 text-[10px] font-bold tracking-widest uppercase mb-1">
-                            Sunrise
-                        </p>
-                        <p className="text-white text-xl font-semibold font-clock">
-                            {sunriseToday.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: timeZone })}
-                        </p>
-                    </div>
-                </div>
-
-                {/* Divider */}
-                <div className="w-px h-16 bg-gradient-to-b from-transparent via-white/20 to-transparent"></div>
-
-                {/* Sunset Card */}
-                <div className="glass-badge px-6 py-4 rounded-2xl flex items-center gap-4 min-w-[160px]">
-                    <div className="p-3 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl">
-                        <Sunset className="text-purple-400" size={24} strokeWidth={1.5} />
-                    </div>
-                    <div>
-                        <p className="text-white/40 text-[10px] font-bold tracking-widest uppercase mb-1">
-                            Sunset
-                        </p>
-                        <p className="text-white text-xl font-semibold font-clock">
-                            {sunsetToday.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: timeZone })}
-                        </p>
-                    </div>
-                </div>
-
-            </motion.div>
         </div>
     );
 }
