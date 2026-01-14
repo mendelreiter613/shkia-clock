@@ -183,7 +183,7 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                             animate={{ scale: 1, opacity: 1 }}
                             className="flex flex-col items-center"
                         >
-                            <span className="text-[25vw] font-bold text-red-500 drop-shadow-[0_0_50px_rgba(220,38,38,0.8)] tabular-nums">
+                            <span className="font-clock text-[25vw] font-bold text-red-500 drop-shadow-[0_0_50px_rgba(220,38,38,0.8)] tabular-nums">
                                 {time.seconds}
                             </span>
                             <span className="text-4xl font-bold text-white/80 mt-[-2rem]">SECONDS</span>
@@ -195,17 +195,17 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                             className="flex items-center gap-4 md:gap-8"
                         >
                             <div className="flex flex-col items-center">
-                                <span className="text-[12vw] md:text-[8rem] font-bold drop-shadow-2xl">{time.hours}</span>
+                                <span className="font-clock text-[12vw] md:text-[8rem] font-bold drop-shadow-2xl">{time.hours}</span>
                                 <span className="text-sm md:text-xl uppercase tracking-widest opacity-60">Hours</span>
                             </div>
                             <span className="text-[8vw] md:text-[6rem] opacity-40 -mt-8">:</span>
                             <div className="flex flex-col items-center">
-                                <span className="text-[12vw] md:text-[8rem] font-bold drop-shadow-2xl">{time.minutes}</span>
+                                <span className="font-clock text-[12vw] md:text-[8rem] font-bold drop-shadow-2xl">{time.minutes}</span>
                                 <span className="text-sm md:text-xl uppercase tracking-widest opacity-60">Minutes</span>
                             </div>
                             <span className="text-[8vw] md:text-[6rem] opacity-40 -mt-8">:</span>
                             <div className="flex flex-col items-center">
-                                <span className="text-[12vw] md:text-[8rem] font-light text-white/80 drop-shadow-xl">{time.seconds}</span>
+                                <span className="font-clock text-[12vw] md:text-[8rem] font-light text-white/80 drop-shadow-xl">{time.seconds}</span>
                                 <span className="text-sm md:text-xl uppercase tracking-widest opacity-60">Seconds</span>
                             </div>
                         </motion.div>
