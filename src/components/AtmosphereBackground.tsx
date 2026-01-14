@@ -24,10 +24,21 @@ export default function AtmosphereBackground({
 
             {/* Stars (Night only) */}
             {isNight && (
-                <div className="absolute inset-0 bg-[url('/stars.png')] opacity-50" />
+                <div className="absolute inset-0 opacity-50">
+                    <div className="absolute inset-0" style={{
+                        backgroundImage: `radial-gradient(2px 2px at 20% 30%, white, transparent),
+                                         radial-gradient(2px 2px at 60% 70%, white, transparent),
+                                         radial-gradient(1px 1px at 50% 50%, white, transparent),
+                                         radial-gradient(1px 1px at 80% 10%, white, transparent),
+                                         radial-gradient(2px 2px at 90% 60%, white, transparent),
+                                         radial-gradient(1px 1px at 33% 80%, white, transparent)`,
+                        backgroundSize: '200px 200px',
+                        backgroundPosition: '0 0, 40px 60px, 130px 270px, 70px 100px, 150px 50px, 90px 180px'
+                    }} />
+                </div>
             )}
 
-            {/* Sun */}
+            {/* Sun - Made MUCH larger and more visible */}
             <AnimatePresence>
                 {!isNight && (
                     <motion.div
@@ -39,34 +50,57 @@ export default function AtmosphereBackground({
                         }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 1, ease: "linear" }}
-                        className="absolute w-24 h-24 md:w-40 md:h-40 rounded-full z-10 pointer-events-none transform -translate-x-1/2 translate-y-1/2 shadow-2xl shadow-orange-500/50"
+                        className="absolute w-32 h-32 md:w-56 md:h-56 rounded-full z-10 pointer-events-none transform -translate-x-1/2 translate-y-1/2"
                         style={{
-                            background: `radial-gradient(circle, #fbbf24 10%, #f97316 90%)`
+                            background: `radial-gradient(circle, #fef08a 0%, #fbbf24 40%, #f97316 100%)`,
+                            boxShadow: `0 0 80px 20px ${sunProgress > 85 ? 'rgba(249, 115, 22, 0.6)' : 'rgba(251, 191, 36, 0.5)'}`
                         }}
                     >
-                        {/* Sun Glow */}
-                        <div className="absolute inset-0 bg-yellow-400 blur-2xl opacity-40 rounded-full" />
+                        {/* Sun Core - Brighter center */}
+                        <div className="absolute inset-8 bg-yellow-100 rounded-full opacity-90" />
                     </motion.div>
                 )}
             </AnimatePresence>
 
             {/* Ocean */}
-            <div className={`absolute bottom-0 w-full h-[35%] z-20 overflow-hidden backdrop-blur-sm`}>
-                <div className={`absolute inset-0 bg-gradient-to-b ${oceanGradient} opacity-90`} />
+            <div className={`absolute bottom-0 w-full h-[40%] z-20 overflow-hidden`}>
+                {/* Ocean Water */}
+                <div className={`absolute inset-0 bg-gradient-to-b ${oceanGradient} opacity-95`} />
+
+                {/* Waves/Texture */}
+                <div className="absolute inset-0 opacity-20">
+                    <div className="absolute inset-0" style={{
+                        backgroundImage: `repeating-linear-gradient(
+                            0deg,
+                            transparent,
+                            transparent 10px,
+                            rgba(255, 255, 255, 0.03) 10px,
+                            rgba(255, 255, 255, 0.03) 20px
+                        )`
+                    }} />
+                </div>
 
                 {/* Shimmer Effect */}
                 {!isNight && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer scale-150" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent animate-shimmer scale-150" />
                 )}
 
-                {/* Sun Reflection */}
+                {/* Sun Reflection - Enhanced */}
                 {!isNight && (
                     <motion.div
-                        className="absolute h-full w-20 md:w-32 bg-orange-400/20 blur-xl"
+                        className="absolute h-full w-24 md:w-40 blur-2xl"
                         animate={{ left: `${sunProgress}%` }}
-                        style={{ transform: 'translateX(-50%)' }}
+                        style={{
+                            transform: 'translateX(-50%)',
+                            background: `linear-gradient(to bottom, 
+                                ${sunProgress > 85 ? 'rgba(249, 115, 22, 0.4)' : 'rgba(251, 191, 36, 0.3)'} 0%, 
+                                transparent 100%)`
+                        }}
                     />
                 )}
+
+                {/* Horizon Line - Subtle */}
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
             </div>
         </>
     );
