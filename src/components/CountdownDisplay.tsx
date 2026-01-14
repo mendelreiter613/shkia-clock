@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Search, MapPin, Sunrise, Sunset, Clock, AlertTriangle } from "lucide-react";
+import { Search, MapPin, Clock, AlertTriangle } from "lucide-react";
 import { ZmanimData } from "@/lib/zmanim";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
+import { getDynamicMessage } from "@/lib/messages";
+import AtmosphereBackground from "./AtmosphereBackground";
 
 interface CountdownDisplayProps {
     zmanim: ZmanimData;
@@ -27,69 +29,7 @@ function formatTimeLeft(ms: number) {
     };
 }
 
-// Dynamic messages based on day of week and current hour
-function getDynamicMessage(currentHour: number, dayOfWeek: number): string {
-    const messages: { [key: number]: { [key: string]: string } } = {
-        0: { // Sunday
-            "morning": "Plenty of time to daven Shachris! Start your week right! 🌅",
-            "afternoon": "Good afternoon! Still time to daven before shkia 🙏",
-            "evening": "Getting closer! Make time for davening 🕐",
-            "night": "Late night! Daven Shachris soon ⏰"
-        },
-        1: { // Monday
-            "morning": "Start your Monday with davening! You have time 🌄",
-            "afternoon": "Afternoon reminder: Daven before shkia today 📿",
-            "evening": "Don't wait! Shkia is getting closer 🕒",
-            "night": "Late night! Time to daven Shachris ⏰"
-        },
-        2: { // Tuesday
-            "morning": "Beautiful Tuesday morning! Time for Shachris 🌞",
-            "afternoon": "Afternoon check-in: Remember to daven! 🙏",
-            "evening": "Time is short! Get to davening 🕐",
-            "night": "Late night! Daven Shachris soon ⏰"
-        },
-        3: { // Wednesday
-            "morning": "Midweek blessing! Plenty of time to daven 🌅",
-            "afternoon": "Afternoon davening reminder 📿",
-            "evening": "Getting late! Daven soon 🕒",
-            "night": "Late night! Time for Shachris ⏰"
-        },
-        4: { // Thursday
-            "morning": "Thursday morning! Start with davening 🌄",
-            "afternoon": "Good time to daven Shachris 🙏",
-            "evening": "Time running out! Daven soon 🕐",
-            "night": "Late night! Daven Shachris soon ⏰"
-        },
-        5: { // Friday - Erev Shabbos
-            "morning": "Erev Shabbos! Daven early, prepare for Shabbos 🕯️",
-            "afternoon": "Friday afternoon! Daven before Shabbos prep 📿",
-            "evening": "Erev Shabbos rush! Daven quickly! 🕒",
-            "night": "Late night! Late Erev Shabbos! Prepare for Shabbos 🕯️"
-        },
-        6: { // Shabbos
-            "morning": "Shabbos Shalom! Enjoy your day of rest 🕊️",
-            "afternoon": "Peaceful Shabbos afternoon 🌟",
-            "evening": "Shabbos winding down... 🌅",
-            "night": "Shabbos night... ✨"
-        }
-    };
 
-    const dayMessages = messages[dayOfWeek];
-
-    // Determine time of day based on current hour
-    let timeOfDay: string;
-    if (currentHour >= 6 && currentHour < 12) {
-        timeOfDay = "morning";  // 6 AM - 12 PM
-    } else if (currentHour >= 12 && currentHour < 17) {
-        timeOfDay = "afternoon";  // 12 PM - 5 PM
-    } else if (currentHour >= 17 && currentHour < 21) {
-        timeOfDay = "evening";  // 5 PM - 9 PM
-    } else {
-        timeOfDay = "night";  // 9 PM - 6 AM
-    }
-
-    return dayMessages[timeOfDay];
-}
 
 export default function CountdownDisplay({ zmanim, locationName, onReset }: CountdownDisplayProps) {
     const [now, setNow] = useState(new Date());
@@ -181,58 +121,14 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
     return (
         <div className={`flex flex-col h-screen w-full relative overflow-hidden transition-colors duration-1000 ${time.isCritical ? 'animate-alarm bg-red-950/20' : ''}`}>
 
-            {/* --- BACKGROUND SCENE --- */}
-
-            {/* Sky */}
-            <div className={`absolute inset-0 bg-gradient-to-b ${isNight ? 'from-slate-900 to-slate-800' : skyGradient} transition-all duration-1000 ease-in-out`} />
-
-            {/* Stars (Night only) */}
-            {isNight && (
-                <div className="absolute inset-0 bg-[url('/stars.png')] opacity-50" />
-            )}
-
-            {/* Sun */}
-            <AnimatePresence>
-                {!isNight && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{
-                            opacity: 1,
-                            left: `${sunProgress}%`,
-                            bottom: `${sunBottomPosition}%`
-                        }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 1, ease: "linear" }}
-                        className="absolute w-24 h-24 md:w-40 md:h-40 rounded-full z-10 pointer-events-none transform -translate-x-1/2 translate-y-1/2 shadow-2xl shadow-orange-500/50"
-                        style={{
-                            background: `radial-gradient(circle, #fbbf24 10%, #f97316 90%)`
-                        }}
-                    >
-                        {/* Sun Glow */}
-                        <div className="absolute inset-0 bg-yellow-400 blur-2xl opacity-40 rounded-full" />
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Ocean */}
-            <div className={`absolute bottom-0 w-full h-[35%] z-20 overflow-hidden backdrop-blur-sm`}>
-                <div className={`absolute inset-0 bg-gradient-to-b ${oceanGradient} opacity-90`} />
-
-                {/* Shimmer Effect */}
-                {!isNight && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer scale-150" />
-                )}
-
-                {/* Sun Reflection */}
-                {!isNight && (
-                    <motion.div
-                        className="absolute h-full w-20 md:w-32 bg-orange-400/20 blur-xl"
-                        animate={{ left: `${sunProgress}%` }}
-                        style={{ transform: 'translateX(-50%)' }}
-                    />
-                )}
-            </div>
-
+            {/* Background Scene */}
+            <AtmosphereBackground
+                sunProgress={sunProgress}
+                isNight={isNight}
+                sunBottomPosition={sunBottomPosition}
+                skyGradient={skyGradient}
+                oceanGradient={oceanGradient}
+            />
 
             {/* --- UI OVERLAY --- */}
 
