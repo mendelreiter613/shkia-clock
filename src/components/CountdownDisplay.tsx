@@ -138,6 +138,10 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
     // Get dynamic message based on current hour and day (not hours left!)
     const dynamicMessage = getDynamicMessage(currentHour, dayOfWeek);
 
+    console.log(`Sun Progress: ${sunProgress}`);
+    console.log(`Is Night: ${isNight}`);
+    console.log(`Current Time: ${now.toLocaleTimeString()}`);
+
     const statusConfig = time.isCritical
         ? { message: dynamicMessage, color: "red", glow: "rgba(239, 68, 68, 0.4)" }
         : time.isUrgent
@@ -162,9 +166,10 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
         <div className="flex flex-col h-screen w-full relative overflow-hidden">
             {/* Dynamic Background */}
             <div 
-                className="absolute inset-0 transition-all duration-[2000ms] ease-in-out" 
+                className="absolute inset-0 transition-all duration-[2000ms] ease-in-out z-50 border-[5px] border-green-500" 
                 style={{ 
-                    background: getBackgroundGradient()
+                    background: 'hotpink'
+                    // background: getBackgroundGradient()
                 }} 
             />
 
