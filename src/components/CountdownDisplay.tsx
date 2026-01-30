@@ -151,17 +151,20 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
             : { message: dynamicMessage, color: "emerald", glow: "rgba(16, 185, 129, 0.4)" };
 
     const getBackgroundGradient = () => {
+        // Critical (Red) overrides everything for the last 5 minutes (Panic Mode)
         if (time.isCritical) return 'radial-gradient(circle at 50% 50%, #7f1d1d 0%, #450a0a 50%, #000000 100%)';
-        if (time.isUrgent) return 'radial-gradient(circle at 50% 90%, #f59e0b 0%, #ea580c 25%, #7c2d12 60%, #1e1b4b 100%)';
+        
+        // Note: We removed the "Urgent" (Orange) override so the natural sunset gradient can show through
         
         if (isNight) return 'radial-gradient(circle at 50% 30%, #1e293b 0%, #0f172a 50%, #020617 100%)';
-
+        
         // Dynamic Day Gradients - BRIGHTER SKY
         if (sunProgress < 15) return 'linear-gradient(180deg, #3b82f6 0%, #60a5fa 50%, #fde047 100%)'; // Dawn (Blue -> Yellow)
-        if (sunProgress < 75) return 'linear-gradient(180deg, #0ea5e9 0%, #38bdf8 60%, #bae6fd 100%)'; // Day (Bright Sky Blue)
-        if (sunProgress < 90) return 'linear-gradient(180deg, #1d4ed8 0%, #3b82f6 50%, #fbbf24 100%)'; // Golden Hour
+        if (sunProgress < 70) return 'linear-gradient(180deg, #0ea5e9 0%, #38bdf8 60%, #bae6fd 100%)'; // Day (Bright Sky Blue)
+        if (sunProgress < 85) return 'linear-gradient(180deg, #1d4ed8 0%, #3b82f6 50%, #fbbf24 100%)'; // Golden Hour
         
-        return 'linear-gradient(180deg, #0f172a 0%, #7c2d12 40%, #ea580c 80%, #fbbf24 100%)'; // Sunset Approach
+        // Sunset Approach (Deep Orange/Red/Purple) - Visible during the last ~15% of the day
+        return 'linear-gradient(180deg, #0f172a 0%, #7c2d12 40%, #ea580c 80%, #fbbf24 100%)';
     };
 
     return (
