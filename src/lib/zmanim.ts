@@ -65,3 +65,13 @@ export function getZmanimData(lat: number, lng: number, timeZone: string): Zmani
             shkia: targetShkia,
             visualSunrise: new Date(sunriseString), // ALWAYS Today's sunrise (for the background)
             visualSunset: new Date(sunsetString),   // ALWAYS Today's sunset (for the background)
+            sunriseString,
+            sunsetString,
+            timeZone
+        };
+
+    } catch (e) {
+        console.error("Zmanim Error:", e);
+        return null;
+    }
+}
