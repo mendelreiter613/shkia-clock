@@ -33,11 +33,11 @@ export function getZmanimData(lat: number, lng: number, timeZone: string): Zmani
 
         if (!sunriseString || !sunsetString) return null;
 
-        // VISUALS: Always use TODAY'S sunrise/sunset
+        // VISUALS: Always use TODAY'S sunrise/sunset so the background works at night
         const visualSunrise = new Date(sunriseString);
         const visualSunset = new Date(sunsetString);
 
-        // COUNTDOWN: Check if we need tomorrow's Shkia
+        // COUNTDOWN: Check if we need tomorrow's Shkia for the timer
         let targetShkia = new Date(visualSunset);
 
         if (now.getTime() > targetShkia.getTime()) {
@@ -50,12 +50,13 @@ export function getZmanimData(lat: number, lng: number, timeZone: string): Zmani
             if (nextSunsetStr) {
                 targetShkia = new Date(nextSunsetStr);
             }
+            // NOTE: We deliberately do NOT overwrite visualSunrise here.
         }
 
         return {
             shkia: targetShkia,
-            visualSunrise, // Matches your new Interface
-            visualSunset,  // Matches your new Interface
+            visualSunrise, 
+            visualSunset, 
             sunriseString,
             sunsetString,
             timeZone

@@ -102,6 +102,7 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
 
     if (!mounted) return null;
 
+    // USE THE NEW VISUAL FIELDS
     const { shkia, visualSunrise, visualSunset, timeZone } = zmanim;
     const msToShkia = shkia.getTime() - now.getTime();
     const time = formatTimeLeft(msToShkia);
@@ -117,31 +118,25 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
     const hourPart = parts.find(part => part.type === 'hour');
     const currentHour = hourPart ? parseInt(hourPart.value) : 0;
 
-    // Calculate sun position (0 to 100%)
+    // Calculate sun position (0 to 100%) using VISUAL times
     const totalDaylightValues = visualSunset.getTime() - visualSunrise.getTime();
     const elapsedDaylight = now.getTime() - visualSunrise.getTime();
     let sunProgress = (elapsedDaylight / totalDaylightValues) * 100;
 
-    // Clamp logic removed to allow sun to dip below horizon for visual buffer
-    // sunProgress = Math.max(0, Math.min(100, sunProgress));
+    // FIX: Allow sun to go out of bounds (-15 to 115) so it sets completely
+    // We do NOT clamp it strictly to 0-100 anymore for the calculation
 
     // Calculate Sun arc (height) - Peak at 50%
-    const sunHeight = Math.sin((sunProgress / 100) * Math.PI) * 150; // 150px peak height modification
-    // VISUAL FIX: Determine Day/Night based on sunProgress with BUFFER.
+    // If progress is < 0 or > 100, Math.sin might get weird, so we clamp for height calculation only
+    const clampedProgress = Math.max(0, Math.min(100, sunProgress));
+    const sunHeight = Math.sin((clampedProgress / 100) * Math.PI) * 150; 
+
+    // FIX: Only turn "Night Mode" on when sun is sufficiently below horizon
+    // This allows the sunset gradient to be visible before it goes pitch black
     const isNight = sunProgress < -10 || sunProgress > 110;
 
     // Get dynamic message based on current hour and day (not hours left!)
     const dynamicMessage = getDynamicMessage(currentHour, dayOfWeek);
-
-    // DEBUG: Print values to console to trace the issue
-    console.log("DEBUG STATE:", {
-        now: now.toString(),
-        sunrise: visualSunrise.toString(),
-        sunset: visualSunset.toString(),
-        isNight,
-        sunProgress,
-        timeZone
-    });
 
     const statusConfig = time.isCritical
         ? { message: dynamicMessage, color: "red", glow: "rgba(239, 68, 68, 0.4)" }
@@ -150,20 +145,17 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
             : { message: dynamicMessage, color: "emerald", glow: "rgba(16, 185, 129, 0.4)" };
 
     const getBackgroundGradient = () => {
-        // Critical (Red) overrides everything for the last 5 minutes (Panic Mode)
         if (time.isCritical) return 'radial-gradient(circle at 50% 50%, #7f1d1d 0%, #450a0a 50%, #000000 100%)';
-        
-        // Note: We removed the "Urgent" (Orange) override so the natural sunset gradient can show through
+        if (time.isUrgent) return 'radial-gradient(circle at 50% 90%, #f59e0b 0%, #ea580c 25%, #7c2d12 60%, #1e1b4b 100%)';
         
         if (isNight) return 'radial-gradient(circle at 50% 30%, #1e293b 0%, #0f172a 50%, #020617 100%)';
+
+        // Dynamic Day Gradients
+        if (sunProgress < 15) return 'linear-gradient(180deg, #3b82f6 0%, #60a5fa 50%, #fde047 100%)'; // Dawn
+        if (sunProgress < 75) return 'linear-gradient(180deg, #0ea5e9 0%, #38bdf8 60%, #bae6fd 100%)'; // Day
+        if (sunProgress < 90) return 'linear-gradient(180deg, #1d4ed8 0%, #3b82f6 50%, #fbbf24 100%)'; // Golden Hour
         
-        // Dynamic Day Gradients - BRIGHTER SKY
-        if (sunProgress < 15) return 'linear-gradient(180deg, #3b82f6 0%, #60a5fa 50%, #fde047 100%)'; // Dawn (Blue -> Yellow)
-        if (sunProgress < 70) return 'linear-gradient(180deg, #0ea5e9 0%, #38bdf8 60%, #bae6fd 100%)'; // Day (Bright Sky Blue)
-        if (sunProgress < 85) return 'linear-gradient(180deg, #1d4ed8 0%, #3b82f6 50%, #fbbf24 100%)'; // Golden Hour
-        
-        // Sunset Approach (Deep Orange/Red/Purple) - Visible during the last ~15% of the day
-        return 'linear-gradient(180deg, #0f172a 0%, #7c2d12 40%, #ea580c 80%, #fbbf24 100%)';
+        return 'linear-gradient(180deg, #0f172a 0%, #7c2d12 40%, #ea580c 80%, #fbbf24 100%)'; // Sunset Approach
     };
 
     return (
@@ -189,19 +181,20 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                             opacity: 1,
                             scale: 1,
                             left: `${sunProgress}%`,
-                            bottom: `${-15 + (sunHeight / 2)}%` // Dynamic height
+                            // FIX: Sun goes below screen (-15%) at start/end
+                            bottom: `${-15 + (sunHeight / 2)}%` 
                         }}
                         exit={{ opacity: 0, scale: 0 }}
                         transition={{ duration: 1, ease: "linear" }}
-                        className="absolute w-32 h-32 rounded-full z-0 pointer-events-none" // Removed blur-xl from container, added size
+                        className="absolute w-32 h-32 rounded-full z-0 pointer-events-none"
                         style={{
                             background: `radial-gradient(circle, ${sunProgress > 85 ? '#f97316' : '#facc15'} 20%, transparent 70%)`,
-                            boxShadow: `0 0 ${sunProgress > 85 ? '50px' : '80px'} ${sunProgress > 85 ? 'rgba(249, 115, 22, 0.8)' : 'rgba(250, 204, 21, 0.6)'}`, // Increased opacity
+                            boxShadow: `0 0 ${sunProgress > 85 ? '50px' : '80px'} ${sunProgress > 85 ? 'rgba(249, 115, 22, 0.8)' : 'rgba(250, 204, 21, 0.6)'}`,
                             transform: 'translate(-50%, 50%)',
-                            filter: 'blur(8px)' // Reduced blur significantly
+                            filter: 'blur(8px)'
                         }}
                     >
-                        {/* Core of the sun - Made solid and bright */}
+                        {/* Core of the sun */}
                         <div className="absolute inset-8 bg-white rounded-full opacity-100 shadow-[0_0_20px_rgba(255,255,255,0.8)]" />
                     </motion.div>
                 )}
@@ -249,14 +242,14 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                     </h2>
                 </motion.div>
 
-                {/* The Clock - Massive and Glowing */}
+                {/* The Clock */}
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                     className="relative"
                 >
-                    {/* Glow effect behind numbers */}
+                    {/* Glow effect */}
                     <div
                         className="absolute inset-0 blur-3xl opacity-30"
                         style={{
@@ -307,7 +300,7 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                     </div>
                 </motion.div>
 
-                {/* Status Badge - Enhanced */}
+                {/* Status Badge */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -337,7 +330,7 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
 
             </div>
 
-            {/* Footer Info Bar - Modern Cards */}
+            {/* Footer Info Bar */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
