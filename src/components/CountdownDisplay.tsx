@@ -105,7 +105,6 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
     const { shkia, sunriseToday, sunsetToday, timeZone } = zmanim;
     const msToShkia = shkia.getTime() - now.getTime();
     const time = formatTimeLeft(msToShkia);
-    const hoursLeft = msToShkia / 1000 / 60 / 60;
     const dayOfWeek = now.getDay();
 
     // Get current hour in the LOCATION'S timezone (not browser's timezone)
@@ -128,10 +127,22 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
 
     // Calculate Sun arc (height) - Peak at 50%
     const sunHeight = Math.sin((sunProgress / 100) * Math.PI) * 150; // 150px peak height modification
-    const isNight = now.getTime() > sunsetToday.getTime() || now.getTime() < sunriseToday.getTime();
+    // VISUAL FIX: Determine Day/Night based on sunProgress.
+    // This is the most reliable way to determine if it's visually "daytime".
+    const isNight = sunProgress <= 0 || sunProgress >= 100;
 
     // Get dynamic message based on current hour and day (not hours left!)
     const dynamicMessage = getDynamicMessage(currentHour, dayOfWeek);
+
+    // DEBUG: Print values to console to trace the issue
+    console.log("DEBUG STATE:", {
+        now: now.toString(),
+        sunrise: sunriseToday.toString(),
+        sunset: sunsetToday.toString(),
+        isNight,
+        sunProgress,
+        timeZone
+    });
 
     const statusConfig = time.isCritical
         ? { message: dynamicMessage, color: "red", glow: "rgba(239, 68, 68, 0.4)" }
@@ -139,8 +150,29 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
             ? { message: dynamicMessage, color: "amber", glow: "rgba(251, 191, 36, 0.4)" }
             : { message: dynamicMessage, color: "emerald", glow: "rgba(16, 185, 129, 0.4)" };
 
+    const getBackgroundGradient = () => {
+        if (time.isCritical) return 'radial-gradient(circle at 50% 50%, #7f1d1d 0%, #450a0a 50%, #000000 100%)';
+        if (time.isUrgent) return 'radial-gradient(circle at 50% 90%, #f59e0b 0%, #ea580c 25%, #7c2d12 60%, #1e1b4b 100%)';
+        
+        if (isNight) return 'radial-gradient(circle at 50% 30%, #1e293b 0%, #0f172a 50%, #020617 100%)';
+
+        // Dynamic Day Gradients - BRIGHTER SKY
+        if (sunProgress < 15) return 'linear-gradient(180deg, #3b82f6 0%, #60a5fa 50%, #fde047 100%)'; // Dawn (Blue -> Yellow)
+        if (sunProgress < 75) return 'linear-gradient(180deg, #0ea5e9 0%, #38bdf8 60%, #bae6fd 100%)'; // Day (Bright Sky Blue)
+        if (sunProgress < 90) return 'linear-gradient(180deg, #1d4ed8 0%, #3b82f6 50%, #fbbf24 100%)'; // Golden Hour
+        
+        return 'linear-gradient(180deg, #0f172a 0%, #7c2d12 40%, #ea580c 80%, #fbbf24 100%)'; // Sunset Approach
+    };
+
     return (
         <div className="flex flex-col h-screen w-full relative overflow-hidden">
+            {/* Dynamic Background */}
+            <div 
+                className="absolute inset-0 transition-all duration-[2000ms] ease-in-out" 
+                style={{ 
+                    background: getBackgroundGradient()
+                }} 
+            />
 
             {/* Animated Background Orbs */}
             <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-float" />

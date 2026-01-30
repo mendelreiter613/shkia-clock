@@ -5,14 +5,23 @@ export interface ZmanimData {
     shkia: Date; // The target countdown time (could be tomorrow's shkia)
     sunriseToday: Date; // For visual sun cycle
     sunsetToday: Date; // For visual sun cycle
+    sunriseString: string; // ISO string for robust wall-time calc
+    sunsetString: string; // ISO string for robust wall-time calc
     timeZone: string; // Location's timezone for proper time calculations
 }
 
 export function getZmanimData(lat: number, lng: number, timeZone: string): ZmanimData | null {
     try {
         const now = new Date();
+        
+        // CRITICAL FIX: Convert 'now' to the target timezone's Wall Time Date object
+        // If we are in US (Jan 18) but it's already Jan 19 in Japan, we MUST ask for Jan 19's Zmanim.
+        // Otherwise we get Jan 18's Zmanim, which was yesterday in Japan, and the app thinks it's "Night" (Post-Sunset).
+        const targetDateStr = now.toLocaleString("en-US", { timeZone: timeZone });
+        const targetDate = new Date(targetDateStr);
+
         const options = {
-            date: now,
+            date: targetDate,
             latitude: lat,
             longitude: lng,
             timeZoneId: timeZone,
@@ -42,9 +51,19 @@ export function getZmanimData(lat: number, lng: number, timeZone: string): Zmani
             tomorrow.setDate(tomorrow.getDate() + 1);
             options.date = tomorrow;
             const tomorrowData = getZmanimJson(options);
+            
             const nextSunsetStr = getZman(tomorrowData, "Sunset");
+            const nextSunriseStr = getZman(tomorrowData, "Sunrise");
+            
             if (nextSunsetStr) {
                 targetShkia = new Date(nextSunsetStr);
+                // Update today's reference points to be "Tomorrow" since we are counting down to it
+                if (nextSunriseStr) {
+                    sunriseToday = new Date(nextSunriseStr);
+                    sunriseString = nextSunriseStr;
+                }
+                sunsetToday = targetShkia;
+                sunsetString = nextSunsetStr;
             }
         }
 
@@ -52,6 +71,8 @@ export function getZmanimData(lat: number, lng: number, timeZone: string): Zmani
             shkia: targetShkia,
             sunriseToday,
             sunsetToday,
+            sunriseString,
+            sunsetString,
             timeZone
         };
 

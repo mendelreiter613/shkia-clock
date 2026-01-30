@@ -25,7 +25,7 @@ export default function Home() {
 
   return (
     // FIXED: h-[100dvh] prevents mobile cutoff
-    <main className="h-[100dvh] w-full bg-slate-950 relative selection:bg-white/20 overflow-hidden">
+    <main className="h-[100dvh] w-full bg-deep-atmosphere relative selection:bg-white/20 overflow-hidden">
       <AnimatePresence mode="wait">
         {location && zmanim ? (
           <motion.div
