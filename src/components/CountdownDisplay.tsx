@@ -102,7 +102,7 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
 
     if (!mounted) return null;
 
-    const { shkia, sunriseToday, sunsetToday, timeZone } = zmanim;
+    const { shkia, visualSunrise, visualSunset, timeZone } = zmanim;
     const msToShkia = shkia.getTime() - now.getTime();
     const time = formatTimeLeft(msToShkia);
     const dayOfWeek = now.getDay();
@@ -118,18 +118,17 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
     const currentHour = hourPart ? parseInt(hourPart.value) : 0;
 
     // Calculate sun position (0 to 100%)
-    const totalDaylightValues = sunsetToday.getTime() - sunriseToday.getTime();
-    const elapsedDaylight = now.getTime() - sunriseToday.getTime();
+    const totalDaylightValues = visualSunset.getTime() - visualSunrise.getTime();
+    const elapsedDaylight = now.getTime() - visualSunrise.getTime();
     let sunProgress = (elapsedDaylight / totalDaylightValues) * 100;
 
-    // Clamp to 0-100 (sun stays at horizon before sunrise/after sunset)
-    sunProgress = Math.max(0, Math.min(100, sunProgress));
+    // Clamp logic removed to allow sun to dip below horizon for visual buffer
+    // sunProgress = Math.max(0, Math.min(100, sunProgress));
 
     // Calculate Sun arc (height) - Peak at 50%
     const sunHeight = Math.sin((sunProgress / 100) * Math.PI) * 150; // 150px peak height modification
-    // VISUAL FIX: Determine Day/Night based on sunProgress.
-    // This is the most reliable way to determine if it's visually "daytime".
-    const isNight = sunProgress <= 0 || sunProgress >= 100;
+    // VISUAL FIX: Determine Day/Night based on sunProgress with BUFFER.
+    const isNight = sunProgress < -10 || sunProgress > 110;
 
     // Get dynamic message based on current hour and day (not hours left!)
     const dynamicMessage = getDynamicMessage(currentHour, dayOfWeek);
@@ -137,8 +136,8 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
     // DEBUG: Print values to console to trace the issue
     console.log("DEBUG STATE:", {
         now: now.toString(),
-        sunrise: sunriseToday.toString(),
-        sunset: sunsetToday.toString(),
+        sunrise: visualSunrise.toString(),
+        sunset: visualSunset.toString(),
         isNight,
         sunProgress,
         timeZone
@@ -190,7 +189,7 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                             opacity: 1,
                             scale: 1,
                             left: `${sunProgress}%`,
-                            bottom: `${20 + (sunHeight / 5)}%` // Dynamic height
+                            bottom: `${-15 + (sunHeight / 2)}%` // Dynamic height
                         }}
                         exit={{ opacity: 0, scale: 0 }}
                         transition={{ duration: 1, ease: "linear" }}
@@ -356,7 +355,7 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                             Sunrise
                         </p>
                         <p className="text-white text-xl font-semibold font-clock">
-                            {sunriseToday.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: timeZone })}
+                            {visualSunrise.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: timeZone })}
                         </p>
                     </div>
                 </div>
@@ -374,7 +373,7 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                             Sunset
                         </p>
                         <p className="text-white text-xl font-semibold font-clock">
-                            {sunsetToday.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: timeZone })}
+                            {visualSunset.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: timeZone })}
                         </p>
                     </div>
                 </div>

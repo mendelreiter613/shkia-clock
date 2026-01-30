@@ -3,8 +3,8 @@ import { getZmanimJson } from "kosher-zmanim";
 
 export interface ZmanimData {
     shkia: Date; // The target countdown time (could be tomorrow's shkia)
-    sunriseToday: Date; // For visual sun cycle
-    sunsetToday: Date; // For visual sun cycle
+    visualSunrise: Date; // For visual sun cycle
+    visualSunset: Date; // For visual sun cycle
     sunriseString: string; // ISO string for robust wall-time calc
     sunsetString: string; // ISO string for robust wall-time calc
     timeZone: string; // Location's timezone for proper time calculations
@@ -53,31 +53,15 @@ export function getZmanimData(lat: number, lng: number, timeZone: string): Zmani
             const tomorrowData = getZmanimJson(options);
             
             const nextSunsetStr = getZman(tomorrowData, "Sunset");
-            const nextSunriseStr = getZman(tomorrowData, "Sunrise");
             
             if (nextSunsetStr) {
                 targetShkia = new Date(nextSunsetStr);
-                // Update today's reference points to be "Tomorrow" since we are counting down to it
-                if (nextSunriseStr) {
-                    sunriseToday = new Date(nextSunriseStr);
-                    sunriseString = nextSunriseStr;
-                }
-                sunsetToday = targetShkia;
-                sunsetString = nextSunsetStr;
+                // Note: We deliberately DO NOT update visual reference points here. 
+                // The background should always reflect the current calendar day, even if counting down to tomorrow.
             }
         }
 
         return {
             shkia: targetShkia,
-            sunriseToday,
-            sunsetToday,
-            sunriseString,
-            sunsetString,
-            timeZone
-        };
-
-    } catch (e) {
-        console.error("Zmanim Error:", e);
-        return null;
-    }
-}
+            visualSunrise: new Date(sunriseString), // ALWAYS Today's sunrise (for the background)
+            visualSunset: new Date(sunsetString),   // ALWAYS Today's sunset (for the background)
