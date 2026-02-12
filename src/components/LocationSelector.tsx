@@ -70,6 +70,7 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 onLocationFound(position.coords.latitude, position.coords.longitude, "Current Location");
+                setLoading(false);
             },
             () => setLoading(false)
         );

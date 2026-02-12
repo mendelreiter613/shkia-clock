@@ -166,10 +166,9 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
         <div className="flex flex-col h-screen w-full relative overflow-hidden">
             {/* Dynamic Background */}
             <div 
-                className="absolute inset-0 transition-all duration-[2000ms] ease-in-out z-50 border-[5px] border-green-500" 
+                className="absolute inset-0 transition-all duration-[2000ms] ease-in-out z-50" 
                 style={{ 
-                    background: 'hotpink'
-                    // background: getBackgroundGradient()
+                    background: getBackgroundGradient()
                 }} 
             />
 
@@ -340,11 +339,11 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="flex justify-center items-center gap-8 pb-10 z-20 px-6"
+                className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-8 pb-6 sm:pb-10 z-20 px-6 flex-wrap"
             >
 
                 {/* Sunrise Card */}
-                <div className="glass-badge px-6 py-4 rounded-2xl flex items-center gap-4 min-w-[160px]">
+                <div className="glass-badge px-4 sm:px-6 py-4 rounded-2xl flex items-center gap-4 min-w-[150px] sm:min-w-[160px]">
                     <div className="p-3 bg-gradient-to-br from-orange-500/20 to-yellow-500/20 rounded-xl">
                         <Sunrise className="text-orange-400" size={24} strokeWidth={1.5} />
                     </div>
@@ -352,17 +351,17 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                         <p className="text-white/40 text-[10px] font-bold tracking-widest uppercase mb-1">
                             Sunrise
                         </p>
-                        <p className="text-white text-xl font-semibold font-clock">
+                        <p className="text-white text-lg sm:text-xl font-semibold font-clock">
                             {visualSunrise.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: timeZone })}
                         </p>
                     </div>
                 </div>
 
-                {/* Divider */}
-                <div className="w-px h-16 bg-gradient-to-b from-transparent via-white/20 to-transparent"></div>
+                {/* Divider - hidden on mobile */}
+                <div className="hidden sm:block w-px h-16 bg-gradient-to-b from-transparent via-white/20 to-transparent"></div>
 
                 {/* Sunset Card */}
-                <div className="glass-badge px-6 py-4 rounded-2xl flex items-center gap-4 min-w-[160px]">
+                <div className="glass-badge px-4 sm:px-6 py-4 rounded-2xl flex items-center gap-4 min-w-[150px] sm:min-w-[160px]">
                     <div className="p-3 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl">
                         <Sunset className="text-purple-400" size={24} strokeWidth={1.5} />
                     </div>
@@ -370,7 +369,7 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                         <p className="text-white/40 text-[10px] font-bold tracking-widest uppercase mb-1">
                             Sunset
                         </p>
-                        <p className="text-white text-xl font-semibold font-clock">
+                        <p className="text-white text-lg sm:text-xl font-semibold font-clock">
                             {visualSunset.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: timeZone })}
                         </p>
                     </div>
