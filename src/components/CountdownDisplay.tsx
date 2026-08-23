@@ -387,7 +387,7 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-3 mb-12"
+                    className="flex items-center gap-3 mb-6 sm:mb-12"
                 >
                     <Clock className="w-5 h-5 text-white/40" />
                     <h2 className="text-white/40 text-sm font-bold tracking-[0.3em] uppercase">
@@ -458,7 +458,7 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
-                    className={`mt-16 px-8 py-4 rounded-full glass-badge flex items-center gap-4 ${time.isCritical ? 'border-red-500/30' :
+                    className={`mt-8 sm:mt-16 px-8 py-4 rounded-full glass-badge flex items-center gap-4 ${time.isCritical ? 'border-red-500/30' :
                         time.isUrgent ? 'border-amber-500/30' :
                             'border-emerald-500/20'
                         }`}
@@ -488,11 +488,11 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-8 pb-6 sm:pb-10 z-30 px-6 flex-wrap"
+                className="flex flex-row flex-wrap justify-center items-center gap-3 sm:gap-8 pb-6 sm:pb-10 z-30 px-6"
             >
 
                 {/* Sunrise Card */}
-                <div className="glass-badge px-4 sm:px-6 py-4 rounded-2xl flex items-center gap-4 min-w-[150px] sm:min-w-[160px]">
+                <div className="glass-badge px-4 sm:px-6 py-3 sm:py-4 rounded-2xl flex items-center gap-4 min-w-[140px] sm:min-w-[160px]">
                     <div className="p-3 bg-gradient-to-br from-orange-500/20 to-yellow-500/20 rounded-xl">
                         <Sunrise className="text-orange-400" size={24} strokeWidth={1.5} />
                     </div>
@@ -506,11 +506,11 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                     </div>
                 </div>
 
-                {/* Divider - hidden on mobile */}
+                {/* Divider - only shown once the cards actually sit side by side */}
                 <div className="hidden sm:block w-px h-16 bg-gradient-to-b from-transparent via-white/20 to-transparent"></div>
 
                 {/* Sunset Card */}
-                <div className="glass-badge px-4 sm:px-6 py-4 rounded-2xl flex items-center gap-4 min-w-[150px] sm:min-w-[160px]">
+                <div className="glass-badge px-4 sm:px-6 py-3 sm:py-4 rounded-2xl flex items-center gap-4 min-w-[140px] sm:min-w-[160px]">
                     <div className="p-3 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl">
                         <Sunset className="text-purple-400" size={24} strokeWidth={1.5} />
                     </div>
