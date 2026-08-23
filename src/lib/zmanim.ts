@@ -9,27 +9,35 @@ export interface ZmanimData {
     timeZone: string;
 }
 
+interface ZmanimResponse {
+    BasicZmanim?: {
+        Sunrise?: string;
+        Sunset?: string;
+    };
+}
+
+// Represents "now" as wall-clock time in `timeZone`, encoded as a Date the
+// local JS engine will read back with matching Y/M/D — this is what lets us
+// hand kosher-zmanim a date for a timezone other than the machine's own.
+function getZonedDate(instant: Date, timeZone: string): Date {
+    return new Date(instant.toLocaleString("en-US", { timeZone }));
+}
+
 export function getZmanimData(lat: number, lng: number, timeZone: string): ZmanimData | null {
     try {
         const now = new Date();
-        const targetDateStr = now.toLocaleString("en-US", { timeZone: timeZone });
-        const targetDate = new Date(targetDateStr);
+        const zonedNow = getZonedDate(now, timeZone);
 
-        const options = {
-            date: targetDate,
+        const baseOptions = {
             latitude: lat,
             longitude: lng,
             timeZoneId: timeZone,
         };
 
-        let data: any = getZmanimJson(options);
+        const data = getZmanimJson({ ...baseOptions, date: zonedNow }) as ZmanimResponse;
 
-        const getZman = (d: any, key: string) => {
-            return d?.BasicZmanim?.[key] || d?.Zmanim?.[key] || d?.[key.toLowerCase()] || d?.[key];
-        }
-
-        const sunriseString = getZman(data, "Sunrise");
-        const sunsetString = getZman(data, "Sunset");
+        const sunriseString = data.BasicZmanim?.Sunrise;
+        const sunsetString = data.BasicZmanim?.Sunset;
 
         if (!sunriseString || !sunsetString) return null;
 
@@ -41,12 +49,14 @@ export function getZmanimData(lat: number, lng: number, timeZone: string): Zmani
         let targetShkia = new Date(visualSunset);
 
         if (now.getTime() > targetShkia.getTime()) {
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            options.date = tomorrow;
-            const tomorrowData = getZmanimJson(options);
-            const nextSunsetStr = getZman(tomorrowData, "Sunset");
-            
+            // Advance a day within the LOCATION's timezone, not the browser's,
+            // so the rollover lands on the correct calendar day for that place.
+            const zonedTomorrow = new Date(zonedNow);
+            zonedTomorrow.setDate(zonedTomorrow.getDate() + 1);
+
+            const tomorrowData = getZmanimJson({ ...baseOptions, date: zonedTomorrow }) as ZmanimResponse;
+            const nextSunsetStr = tomorrowData.BasicZmanim?.Sunset;
+
             if (nextSunsetStr) {
                 targetShkia = new Date(nextSunsetStr);
             }
@@ -55,8 +65,8 @@ export function getZmanimData(lat: number, lng: number, timeZone: string): Zmani
 
         return {
             shkia: targetShkia,
-            visualSunrise, 
-            visualSunset, 
+            visualSunrise,
+            visualSunset,
             sunriseString,
             sunsetString,
             timeZone

@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 :root {
   --background: #020617;
@@ -107,5 +105,60 @@ body {
 
   .animate-pulse-glow {
     animation: pulseGlow 3s ease-in-out infinite;
+  }
+
+  /* Ocean Waves - two tiles wide, translated by exactly one tile width for a seamless loop */
+  @keyframes waveDrift {
+    from {
+      transform: translateX(0);
+    }
+
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  .animate-wave-back {
+    animation: waveDrift 22s linear infinite;
+  }
+
+  .animate-wave-front {
+    animation: waveDrift 13s linear infinite reverse;
+  }
+
+  /* Star Twinkle */
+  @keyframes twinkle {
+
+    0%,
+    100% {
+      opacity: 0.15;
+    }
+
+    50% {
+      opacity: 1;
+    }
+  }
+
+  .animate-twinkle {
+    animation: twinkle 3s ease-in-out infinite;
+  }
+
+  /* Water Reflection Shimmer */
+  @keyframes shimmer {
+
+    0%,
+    100% {
+      opacity: 0.5;
+      transform: scaleY(1);
+    }
+
+    50% {
+      opacity: 0.85;
+      transform: scaleY(1.08);
+    }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 4s ease-in-out infinite;
   }
 }

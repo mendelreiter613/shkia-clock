@@ -18,10 +18,12 @@ interface CityResult {
 export default function LocationSelector({ onLocationFound }: LocationSelectorProps) {
     const [searchQuery, setSearchQuery] = useState("");
     const [suggestions, setSuggestions] = useState<CityResult[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [searchLoading, setSearchLoading] = useState(false);
+    const [locating, setLocating] = useState(false);
     const [showSuggestions, setShowSuggestions] = useState(false);
-    
+
     const searchTimeout = useRef<NodeJS.Timeout | undefined>(undefined);
+    const abortController = useRef<AbortController | undefined>(undefined);
 
     useEffect(() => {
         if (searchQuery.length < 2) {
@@ -33,14 +35,18 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
         if (searchTimeout.current) clearTimeout(searchTimeout.current);
 
         searchTimeout.current = setTimeout(async () => {
-            setLoading(true);
+            abortController.current?.abort();
+            const controller = new AbortController();
+            abortController.current = controller;
+
+            setSearchLoading(true);
             try {
                 const res = await fetch(
                     `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=5`,
-                    { headers: { "User-Agent": "ShkiaClock/2.0" } }
+                    { headers: { "User-Agent": "ShkiaClock/2.0" }, signal: controller.signal }
                 );
-                const data = await res.json();
-                const cities = data.map((item: any) => ({
+                const data: { display_name: string; lat: string; lon: string }[] = await res.json();
+                const cities = data.map((item) => ({
                     display_name: item.display_name,
                     lat: item.lat,
                     lon: item.lon,
@@ -48,10 +54,10 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
                 }));
                 setSuggestions(cities);
                 setShowSuggestions(cities.length > 0);
-            } catch {
-                console.error("Search failed");
+            } catch (err) {
+                if ((err as Error).name !== "AbortError") console.error("Search failed");
             } finally {
-                setLoading(false);
+                if (abortController.current === controller) setSearchLoading(false);
             }
         }, 300);
 
@@ -65,14 +71,14 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
     };
 
     const handleGeolocation = () => {
-        setLoading(true);
         if (!navigator.geolocation) return;
+        setLocating(true);
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 onLocationFound(position.coords.latitude, position.coords.longitude, "Current Location");
-                setLoading(false);
+                setLocating(false);
             },
-            () => setLoading(false)
+            () => setLocating(false)
         );
     };
 
@@ -132,7 +138,7 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
                                 autoFocus
                             />
                             
-                            {loading && (
+                            {searchLoading && (
                                 <div className="absolute inset-y-0 right-0 pr-5 flex items-center">
                                     <Loader2 className="h-5 w-5 text-blue-400 animate-spin" />
                                 </div>
@@ -188,12 +194,17 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={handleGeolocation}
-                        className="relative w-full h-16 flex items-center justify-center gap-3 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-white/20 rounded-2xl text-white font-semibold text-lg hover:border-white/40 hover:bg-gradient-to-r hover:from-blue-500/20 hover:to-purple-500/20 transition-all duration-300 group overflow-hidden"
+                        disabled={locating}
+                        className="relative w-full h-16 flex items-center justify-center gap-3 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-white/20 rounded-2xl text-white font-semibold text-lg hover:border-white/40 hover:bg-gradient-to-r hover:from-blue-500/20 hover:to-purple-500/20 transition-all duration-300 group overflow-hidden disabled:opacity-60"
                     >
                         <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-white/5 to-purple-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                        
-                        <MapPin size={22} className="relative z-10 group-hover:scale-110 transition-transform" />
-                        <span className="relative z-10">Use current location</span>
+
+                        {locating ? (
+                            <Loader2 size={22} className="relative z-10 animate-spin" />
+                        ) : (
+                            <MapPin size={22} className="relative z-10 group-hover:scale-110 transition-transform" />
+                        )}
+                        <span className="relative z-10">{locating ? "Locating..." : "Use current location"}</span>
                     </motion.button>
                 
                 </motion.div>
