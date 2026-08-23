@@ -227,7 +227,7 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
     const ocean = getOceanPalette();
 
     return (
-        <div className="flex flex-col h-screen w-full relative overflow-hidden">
+        <div className="flex flex-col h-dvh w-full relative overflow-hidden">
             {/* Sky (bottom layer) */}
             <div
                 className="absolute inset-0 transition-all duration-[2000ms] ease-in-out z-0"
@@ -315,7 +315,7 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
             </AnimatePresence>
 
             {/* OCEAN (in front of the celestial body's lower half, so it visibly rises out of / sinks into the water) */}
-            <div className="absolute bottom-0 left-0 w-full overflow-hidden pointer-events-none z-20" style={{ height: `${HORIZON_PCT}vh` }}>
+            <div className="absolute bottom-0 left-0 w-full overflow-hidden pointer-events-none z-20" style={{ height: `${HORIZON_PCT}dvh` }}>
                 {/* Water body */}
                 <div
                     className="absolute inset-0 transition-all duration-[2000ms] ease-in-out"
