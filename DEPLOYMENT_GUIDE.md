@@ -1,4 +1,4 @@
-# Deploying Shkia Clock
+# Deploying Shkia Trusher
 
 The site is hosted on **Vercel** (project `shkia-clock`, live at
 https://www.shkiatrusher.com). Every push to `main` on
@@ -29,7 +29,7 @@ The bell button on the countdown screen offers two kinds of reminder:
 ### Where it lives (shared Supabase project)
 
 It's in the **Meerkhan Trusher** Supabase project, which other apps also use.
-To keep it separate, everything Shkia Clock owns is named `shkia_`:
+To keep it separate, everything Shkia Trusher owns is named `shkia_`:
 
 | Object | What it is |
 | --- | --- |

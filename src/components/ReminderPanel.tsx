@@ -96,7 +96,7 @@ export default function ReminderPanel({ reminders, locationName, onClose }: Remi
                     <OptionCard
                         icon={<Monitor className="w-5 h-5 text-emerald-300" />}
                         title="While this page is open"
-                        description="Nothing to install. Only works while Shkia Clock stays open in a tab. If you close it, no reminder."
+                        description="Nothing to install. Only works while Shkia Trusher stays open in a tab. If you close it, no reminder."
                         active={prefs.mode === "tab"}
                     >
                         {support && !support.notifications ? (
@@ -110,7 +110,7 @@ export default function ReminderPanel({ reminders, locationName, onClose }: Remi
                     <OptionCard
                         icon={<Smartphone className="w-5 h-5 text-purple-300" />}
                         title="Every day, even when closed"
-                        description="A real notification on your phone or computer every day, even when Shkia Clock is closed. Needs the Shkia Clock app installed."
+                        description="A real notification on your phone or computer every day, even when Shkia Trusher is closed. Needs the Shkia Trusher app installed."
                         active={prefs.mode === "push"}
                     >
                         {/* Daily reminders are only turned on from inside the installed app. Anyone who
@@ -183,7 +183,7 @@ function ActionButton({ active, busy, onClick }: { active: boolean; busy: boolea
     );
 }
 
-const OPEN_APP_STEP = <>Open the <b>Shkia Clock</b> app and turn this on inside it</>;
+const OPEN_APP_STEP = <>Open the <b>Shkia Trusher</b> app and turn this on inside it</>;
 
 function InstallSteps({ platform, canInstall, justInstalled, onInstall }: {
     platform: DeviceSupport["platform"]; canInstall: boolean; justInstalled: boolean; onInstall: () => void;
@@ -205,7 +205,7 @@ function InstallSteps({ platform, canInstall, justInstalled, onInstall }: {
                         onClick={onInstall}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 -my-1 rounded-lg text-sm font-semibold bg-blue-500 hover:bg-blue-400 transition-colors"
                     >
-                        <Download className="w-4 h-4" /> Install Shkia Clock
+                        <Download className="w-4 h-4" /> Install Shkia Trusher
                     </button>
                 </Step>
                 <Step n={2}>{OPEN_APP_STEP}</Step>
@@ -219,7 +219,7 @@ function InstallSteps({ platform, canInstall, justInstalled, onInstall }: {
                 <InstallBox title="On iPhone, add the app to your home screen first:">
                     <Step n={1}>Tap <Share className="inline w-4 h-4 -mt-0.5 mx-0.5" /> <b>Share</b> at the bottom of Safari</Step>
                     <Step n={2}>Choose <SquarePlus className="inline w-4 h-4 -mt-0.5 mx-0.5" /> <b>Add to Home Screen</b></Step>
-                    <Step n={3}>Open <b>Shkia Clock</b> from your home screen and turn this on there</Step>
+                    <Step n={3}>Open <b>Shkia Trusher</b> from your home screen and turn this on there</Step>
                     <p className="text-xs text-white/50 pt-1">Needs iOS 16.4 or newer.</p>
                 </InstallBox>
             );
@@ -242,13 +242,13 @@ function InstallSteps({ platform, canInstall, justInstalled, onInstall }: {
         case "firefox-desktop":
             return (
                 <InstallBox title="Firefox can't install apps">
-                    <p>Open <b>www.shkiatrusher.com</b> in Chrome, Edge, or Safari to install Shkia Clock, then turn this on inside the app.</p>
+                    <p>Open <b>www.shkiatrusher.com</b> in Chrome, Edge, or Safari to install Shkia Trusher, then turn this on inside the app.</p>
                 </InstallBox>
             );
         default:
             return (
                 <InstallBox title="Install the app first:">
-                    <Step n={1}>Click the install icon at the right end of the address bar, or open the browser menu and choose <b>Install Shkia Clock</b></Step>
+                    <Step n={1}>Click the install icon at the right end of the address bar, or open the browser menu and choose <b>Install Shkia Trusher</b></Step>
                     <Step n={2}>{OPEN_APP_STEP}</Step>
                 </InstallBox>
             );

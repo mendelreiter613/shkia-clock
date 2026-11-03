@@ -7,11 +7,11 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const orbitron = Orbitron({ subsets: ["latin"], variable: "--font-orbitron" });
 
 export const metadata: Metadata = {
-  title: "Shkia Clock",
+  title: "Shkia Trusher",
   description: "Countdown to Sunset",
   // Lets iOS open the home-screen version full screen, which is also what
   // enables web push there.
-  appleWebApp: { capable: true, title: "Shkia Clock", statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, title: "Shkia Trusher", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = {

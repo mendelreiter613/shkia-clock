@@ -1,4 +1,4 @@
-# Shkia Clock ⏳
+# Shkia Trusher ⏳
 
 A Next.js application that displays a countdown timer to **Shkia** (Sunset) based on your location. It calculates Zmanim locally using the `kosher-zmanim` library.
 

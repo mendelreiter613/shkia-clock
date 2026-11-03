@@ -5,8 +5,8 @@ import type { MetadataRoute } from "next";
 // reminders there.
 export default function manifest(): MetadataRoute.Manifest {
     return {
-        name: "Shkia Clock",
-        short_name: "Shkia Clock",
+        name: "Shkia Trusher",
+        short_name: "Shkia Trusher",
         description: "Countdown to shkia, with a daily Shachris reminder",
         start_url: "/",
         display: "standalone",

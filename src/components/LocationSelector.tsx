@@ -43,7 +43,7 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
             try {
                 const res = await fetch(
                     `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=5`,
-                    { headers: { "User-Agent": "ShkiaClock/2.0" }, signal: controller.signal }
+                    { headers: { "User-Agent": "ShkiaTrusher/2.0" }, signal: controller.signal }
                 );
                 const data: { display_name: string; lat: string; lon: string }[] = await res.json();
                 const cities = data.map((item) => ({
@@ -107,7 +107,7 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
                     </motion.div>
                     
                     <h1 className="text-5xl font-bold text-white tracking-tight mb-3 glow-text">
-                        Shkia Clock
+                        Shkia Trusher
                     </h1>
                     <p className="text-white/50 text-base">Begin your countdown to sunset</p>
                 </div>
