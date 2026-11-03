@@ -124,7 +124,7 @@ export default function LocationSelector({ onLocationFound }: LocationSelectorPr
                         <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                         
                         <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                            <div className="absolute inset-y-0 left-0 z-10 pl-5 flex items-center pointer-events-none">
                                 <Search className="h-5 w-5 text-white/40 group-focus-within:text-blue-400 transition-colors" />
                             </div>
                             
