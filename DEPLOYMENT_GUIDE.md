@@ -9,9 +9,11 @@ https://www.shkiatrusher.com). Every push to `main` on
 The bell button on the countdown screen offers two kinds of reminder:
 
 - **While this page is open:** runs entirely in the browser. Needs no setup.
-- **Every day, even when closed:** real web push. On iPhone it only works
-  after the user adds the site to their home screen (iOS 16.4+), and the panel
-  walks them through that.
+- **Every day, even when closed:** real web push. Only offered inside the
+  installed app (home screen, Dock, or desktop app). In a normal browser tab
+  the panel shows install steps for that device instead. iPhone strictly
+  requires this (iOS 16.4+); elsewhere it's a product choice, so everyone gets
+  the same app experience.
 
 ### How daily reminders work
 

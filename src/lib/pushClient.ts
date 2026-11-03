@@ -70,20 +70,29 @@ export function saveLastTabNotified(shkiaMs: number) {
 export interface DeviceSupport {
     notifications: boolean;
     push: boolean;
-    isIOS: boolean;
+    // Which install instructions apply. Daily reminders are only offered
+    // inside the installed app, so every platform needs its own how-to.
+    platform: "ios" | "android" | "mac-safari" | "firefox-desktop" | "desktop";
     isStandalone: boolean;
 }
 
 export function getDeviceSupport(): DeviceSupport {
     const nav = window.navigator as Navigator & { standalone?: boolean };
+    const ua = nav.userAgent;
     // iPadOS reports itself as a Mac, so also check for touch.
-    const isIOS = /iPad|iPhone|iPod/.test(nav.userAgent) || (nav.platform === "MacIntel" && nav.maxTouchPoints > 1);
+    const isIOS = /iPad|iPhone|iPod/.test(ua) || (nav.platform === "MacIntel" && nav.maxTouchPoints > 1);
     const isStandalone = window.matchMedia("(display-mode: standalone)").matches || nav.standalone === true;
+    const platform: DeviceSupport["platform"] =
+        isIOS ? "ios"
+        : /Android/.test(ua) ? "android"
+        : /Firefox\//.test(ua) ? "firefox-desktop"
+        : /Macintosh/.test(ua) && /Safari\//.test(ua) && !/Chrome\/|Chromium\/|Edg\//.test(ua) ? "mac-safari"
+        : "desktop";
     return {
         notifications: "Notification" in window,
         // iOS only exposes PushManager inside a home-screen app.
         push: "serviceWorker" in nav && "PushManager" in window && !!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-        isIOS,
+        platform,
         isStandalone,
     };
 }

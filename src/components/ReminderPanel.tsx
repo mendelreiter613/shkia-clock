@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Bell, Check, Loader2, Monitor, Share, Smartphone, SquarePlus, X } from "lucide-react";
+import { Bell, Check, Download, EllipsisVertical, Loader2, Monitor, Share, Smartphone, SquarePlus, X } from "lucide-react";
 import { REMINDER_MINUTES } from "@/lib/reminders";
 import { DeviceSupport, getDeviceSupport, getInstallPrompt, onInstallPromptChange } from "@/lib/pushClient";
 import { RemindersState } from "@/hooks/useReminders";
@@ -17,6 +17,7 @@ export default function ReminderPanel({ reminders, locationName, onClose }: Remi
     const { prefs, busy, error, enableTab, enablePush, disable, setMinutes } = reminders;
     const [support, setSupport] = useState<DeviceSupport | null>(null);
     const [canInstall, setCanInstall] = useState(false);
+    const [justInstalled, setJustInstalled] = useState(false);
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- browser capability checks need window
@@ -35,11 +36,10 @@ export default function ReminderPanel({ reminders, locationName, onClose }: Remi
         const prompt = getInstallPrompt();
         if (!prompt) return;
         await prompt.prompt();
-        await prompt.userChoice;
+        const { outcome } = await prompt.userChoice;
+        if (outcome === "accepted") setJustInstalled(true);
         setCanInstall(!!getInstallPrompt());
     };
-
-    const needsHomeScreen = support?.isIOS && !support.isStandalone;
 
     return (
         <motion.div
@@ -110,33 +110,21 @@ export default function ReminderPanel({ reminders, locationName, onClose }: Remi
                     <OptionCard
                         icon={<Smartphone className="w-5 h-5 text-purple-300" />}
                         title="Every day, even when closed"
-                        description="A real notification on your phone or computer every day, whether or not the site is open."
+                        description="A real notification on your phone or computer every day, even when Shkia Clock is closed. Needs the Shkia Clock app installed."
                         active={prefs.mode === "push"}
                     >
-                        {!support ? null : needsHomeScreen ? (
-                            <div className="rounded-xl bg-white/5 border border-white/10 p-4 text-sm text-white/80 space-y-2.5">
-                                <p className="font-semibold text-white">On iPhone, add the app to your home screen first:</p>
-                                <Step n={1}>Tap <Share className="inline w-4 h-4 -mt-0.5 mx-0.5" /> <b>Share</b> at the bottom of Safari</Step>
-                                <Step n={2}>Choose <SquarePlus className="inline w-4 h-4 -mt-0.5 mx-0.5" /> <b>Add to Home Screen</b></Step>
-                                <Step n={3}>Open <b>Shkia Clock</b> from your home screen and turn this on there</Step>
-                                <p className="text-xs text-white/50 pt-1">Needs iOS 16.4 or newer.</p>
-                            </div>
+                        {/* Daily reminders are only turned on from inside the installed app. Anyone who
+                            already has them on keeps seeing "On" here so they can still turn them off. */}
+                        {!support ? null : prefs.mode === "push" ? (
+                            <ActionButton active busy={busy} onClick={enablePush} />
+                        ) : !support.isStandalone ? (
+                            <InstallSteps platform={support.platform} canInstall={canInstall} justInstalled={justInstalled} onInstall={install} />
                         ) : !support.push ? (
                             <p className="text-xs text-white/50">
-                                This browser can&apos;t get notifications while the site is closed. Try Chrome, Edge, Firefox, or Safari on a Mac.
+                                This device can&apos;t get notifications while the app is closed.
                             </p>
                         ) : (
-                            <div className="flex flex-wrap items-center gap-2">
-                                <ActionButton active={prefs.mode === "push"} busy={busy} onClick={enablePush} />
-                                {canInstall && !support.isStandalone && (
-                                    <button
-                                        onClick={install}
-                                        className="px-4 py-2 rounded-xl text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
-                                    >
-                                        Install the app
-                                    </button>
-                                )}
-                            </div>
+                            <ActionButton active={false} busy={busy} onClick={enablePush} />
                         )}
                     </OptionCard>
                 </div>
@@ -192,6 +180,87 @@ function ActionButton({ active, busy, onClick }: { active: boolean; busy: boolea
             {busy && <Loader2 className="w-4 h-4 animate-spin" />}
             Turn on
         </button>
+    );
+}
+
+const OPEN_APP_STEP = <>Open the <b>Shkia Clock</b> app and turn this on inside it</>;
+
+function InstallSteps({ platform, canInstall, justInstalled, onInstall }: {
+    platform: DeviceSupport["platform"]; canInstall: boolean; justInstalled: boolean; onInstall: () => void;
+}) {
+    if (justInstalled) {
+        return (
+            <InstallBox title="Installed!">
+                <p>{OPEN_APP_STEP}.</p>
+            </InstallBox>
+        );
+    }
+
+    // Chrome, Edge and Android browsers that offer a one-tap install.
+    if (canInstall) {
+        return (
+            <InstallBox title="Install the app first:">
+                <Step n={1}>
+                    <button
+                        onClick={onInstall}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 -my-1 rounded-lg text-sm font-semibold bg-blue-500 hover:bg-blue-400 transition-colors"
+                    >
+                        <Download className="w-4 h-4" /> Install Shkia Clock
+                    </button>
+                </Step>
+                <Step n={2}>{OPEN_APP_STEP}</Step>
+            </InstallBox>
+        );
+    }
+
+    switch (platform) {
+        case "ios":
+            return (
+                <InstallBox title="On iPhone, add the app to your home screen first:">
+                    <Step n={1}>Tap <Share className="inline w-4 h-4 -mt-0.5 mx-0.5" /> <b>Share</b> at the bottom of Safari</Step>
+                    <Step n={2}>Choose <SquarePlus className="inline w-4 h-4 -mt-0.5 mx-0.5" /> <b>Add to Home Screen</b></Step>
+                    <Step n={3}>Open <b>Shkia Clock</b> from your home screen and turn this on there</Step>
+                    <p className="text-xs text-white/50 pt-1">Needs iOS 16.4 or newer.</p>
+                </InstallBox>
+            );
+        case "android":
+            return (
+                <InstallBox title="Install the app first:">
+                    <Step n={1}>Tap <EllipsisVertical className="inline w-4 h-4 -mt-0.5" /> in your browser</Step>
+                    <Step n={2}>Choose <b>Install app</b> or <b>Add to Home screen</b></Step>
+                    <Step n={3}>{OPEN_APP_STEP}</Step>
+                </InstallBox>
+            );
+        case "mac-safari":
+            return (
+                <InstallBox title="Add the app to your Dock first:">
+                    <Step n={1}>In the Safari menu bar, choose <b>File</b> → <b>Add to Dock</b></Step>
+                    <Step n={2}>{OPEN_APP_STEP}</Step>
+                    <p className="text-xs text-white/50 pt-1">Needs macOS Sonoma or newer.</p>
+                </InstallBox>
+            );
+        case "firefox-desktop":
+            return (
+                <InstallBox title="Firefox can't install apps">
+                    <p>Open <b>www.shkiatrusher.com</b> in Chrome, Edge, or Safari to install Shkia Clock, then turn this on inside the app.</p>
+                </InstallBox>
+            );
+        default:
+            return (
+                <InstallBox title="Install the app first:">
+                    <Step n={1}>Click the install icon at the right end of the address bar, or open the browser menu and choose <b>Install Shkia Clock</b></Step>
+                    <Step n={2}>{OPEN_APP_STEP}</Step>
+                </InstallBox>
+            );
+    }
+}
+
+function InstallBox({ title, children }: { title: string; children: React.ReactNode }) {
+    return (
+        <div className="rounded-xl bg-white/5 border border-white/10 p-4 text-sm text-white/80 space-y-2.5">
+            <p className="font-semibold text-white">{title}</p>
+            {children}
+        </div>
     );
 }
 
