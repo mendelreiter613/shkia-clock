@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, MapPin, Sunrise, Sunset, Clock } from "lucide-react";
+import { Search, MapPin, Sunrise, Sunset, Clock, Bell } from "lucide-react";
 import { ZmanimData } from "@/lib/zmanim";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { useReminders } from "@/hooks/useReminders";
+import ReminderPanel from "./ReminderPanel";
 
 // % of viewport height the ocean band occupies, measured from the bottom.
 // The sun/moon arc is anchored to this so it visually rises out of / sinks
@@ -21,6 +23,8 @@ interface Star {
 interface CountdownDisplayProps {
     zmanim: ZmanimData;
     locationName: string;
+    lat: number;
+    lng: number;
     onReset: () => void;
 }
 
@@ -96,10 +100,12 @@ function getDynamicMessage(phase: DayPhase, dayOfWeek: number): string {
     return messages[dayOfWeek][phase];
 }
 
-export default function CountdownDisplay({ zmanim, locationName, onReset }: CountdownDisplayProps) {
+export default function CountdownDisplay({ zmanim, locationName, lat, lng, onReset }: CountdownDisplayProps) {
     const [now, setNow] = useState(new Date());
     const [mounted, setMounted] = useState(false);
+    const [showReminders, setShowReminders] = useState(false);
     const reduceMotion = useReducedMotion();
+    const reminders = useReminders({ lat, lng, name: locationName }, zmanim, now);
 
     // Lazy initializer: generated once per mount so stars don't reshuffle on every 1s tick.
     const [stars] = useState<Star[]>(() => Array.from({ length: 50 }, () => ({
@@ -393,15 +399,31 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                     </span>
                 </motion.div>
 
-                <motion.button
-                    whileHover={{ scale: 1.1, rotate: 90 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={onReset}
-                    className="p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all backdrop-blur-xl"
-                    title="Change Location"
-                >
-                    <Search size={20} className="text-white/70" />
-                </motion.button>
+                <div className="flex items-center gap-3">
+                    <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => setShowReminders(true)}
+                        className="relative p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all backdrop-blur-xl"
+                        title="Shachris reminder"
+                        aria-label="Shachris reminder"
+                    >
+                        <Bell size={20} className="text-white/70" />
+                        {reminders.prefs.mode !== "off" && (
+                            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-400" />
+                        )}
+                    </motion.button>
+
+                    <motion.button
+                        whileHover={{ scale: 1.1, rotate: 90 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={onReset}
+                        className="p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all backdrop-blur-xl"
+                        title="Change Location"
+                    >
+                        <Search size={20} className="text-white/70" />
+                    </motion.button>
+                </div>
             </motion.div>
 
             {/* Main Clock Display */}
@@ -553,6 +575,12 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                 </div>
 
             </motion.div>
+
+            <AnimatePresence>
+                {showReminders && (
+                    <ReminderPanel reminders={reminders} locationName={locationName} onClose={() => setShowReminders(false)} />
+                )}
+            </AnimatePresence>
         </div>
     );
 }

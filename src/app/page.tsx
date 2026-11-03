@@ -69,6 +69,8 @@ export default function Home() {
             <CountdownDisplay
               zmanim={zmanim}
               locationName={location.name}
+              lat={location.lat}
+              lng={location.lng}
               onReset={handleReset}
             />
           </motion.div>
