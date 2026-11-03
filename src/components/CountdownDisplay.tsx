@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Search, MapPin, Sunrise, Sunset, Clock } from "lucide-react";
 import { ZmanimData } from "@/lib/zmanim";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 
 // % of viewport height the ocean band occupies, measured from the bottom.
 // The sun/moon arc is anchored to this so it visually rises out of / sinks
@@ -34,8 +34,9 @@ function formatTimeLeft(ms: number) {
         hours: pad(hours),
         minutes: pad(minutes),
         seconds: pad(seconds),
-        isUrgent: totalSeconds < 900,
-        isCritical: totalSeconds < 300
+        // Zero means shkia has passed and we're waiting on the next zmanim refresh, not urgent
+        isUrgent: totalSeconds > 0 && totalSeconds < 900,
+        isCritical: totalSeconds > 0 && totalSeconds < 300
     };
 }
 
@@ -98,6 +99,7 @@ function getDynamicMessage(phase: DayPhase, dayOfWeek: number): string {
 export default function CountdownDisplay({ zmanim, locationName, onReset }: CountdownDisplayProps) {
     const [now, setNow] = useState(new Date());
     const [mounted, setMounted] = useState(false);
+    const reduceMotion = useReducedMotion();
 
     // Lazy initializer: generated once per mount so stars don't reshuffle on every 1s tick.
     const [stars] = useState<Star[]>(() => Array.from({ length: 50 }, () => ({
@@ -168,7 +170,7 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
     const statusConfig = time.isCritical
         ? { message: dynamicMessage, color: "red", glow: "rgba(239, 68, 68, 0.4)" }
         : time.isUrgent
-            ? { message: dynamicMessage, color: "amber", glow: "rgba(251, 191, 36, 0.4)" }
+            ? { message: dynamicMessage, color: "red", glow: "rgba(239, 68, 68, 0.35)" }
             : { message: dynamicMessage, color: "emerald", glow: "rgba(16, 185, 129, 0.4)" };
 
     const getBackgroundGradient = () => {
@@ -225,6 +227,11 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
         };
     };
     const ocean = getOceanPalette();
+
+    // Last 15 minutes: flash red, faster and harder in the last 5. With
+    // reduced motion, hold a steady red tint instead of flashing.
+    const flashDuration = time.isCritical ? 0.8 : 1.6;
+    const flashPeak = time.isCritical ? 0.8 : 0.6;
 
     return (
         <div className="flex flex-col h-dvh w-full relative overflow-hidden">
@@ -353,6 +360,23 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                 </div>
             </div>
 
+            {/* URGENCY FLASH (last 15 min) - above the scene, below the clock so digits stay readable */}
+            <AnimatePresence>
+                {time.isUrgent && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={reduceMotion ? { opacity: flashPeak } : { opacity: [0, flashPeak, 0] }}
+                        // Own transition, or exit inherits repeat: Infinity and never unmounts
+                        exit={{ opacity: 0, transition: { duration: 1 } }}
+                        transition={reduceMotion ? { duration: 1 } : { duration: flashDuration, repeat: Infinity, ease: "easeInOut" }}
+                        className="absolute inset-0 z-[25] pointer-events-none"
+                        style={{
+                            background: 'radial-gradient(ellipse at center, rgba(185,28,28,0.35) 20%, rgba(153,27,27,0.95) 100%)'
+                        }}
+                    />
+                )}
+            </AnimatePresence>
+
             {/* Header */}
             <motion.div
                 initial={{ opacity: 0, y: -20 }}
@@ -410,7 +434,15 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                         }}
                     />
 
-                    <div className="font-clock text-white font-light leading-none tracking-[0.1em] flex items-center gap-4 relative">
+                    <motion.div
+                        animate={time.isUrgent
+                            ? (reduceMotion ? { color: '#f87171' } : { color: ['#ffffff', '#f87171', '#ffffff'] })
+                            : { color: '#ffffff' }}
+                        transition={time.isUrgent && !reduceMotion
+                            ? { duration: flashDuration, repeat: Infinity, ease: "easeInOut" }
+                            : { duration: 0.5 }}
+                        className="font-clock font-light leading-none tracking-[0.1em] flex items-center gap-4 relative"
+                    >
                         <AnimatePresence mode="wait">
                             <motion.span
                                 key={time.hours}
@@ -445,12 +477,12 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                                 initial={{ y: 20, opacity: 0 }}
                                 animate={{ y: 0, opacity: 1 }}
                                 exit={{ y: -20, opacity: 0 }}
-                                className="text-[clamp(2.5rem,10vw,8rem)] md:text-[clamp(3rem,12vw,9rem)] text-white/70"
+                                className="text-[clamp(2.5rem,10vw,8rem)] md:text-[clamp(3rem,12vw,9rem)] opacity-70"
                             >
                                 {time.seconds}
                             </motion.span>
                         </AnimatePresence>
-                    </div>
+                    </motion.div>
                 </motion.div>
 
                 {/* Status Badge */}
@@ -458,21 +490,17 @@ export default function CountdownDisplay({ zmanim, locationName, onReset }: Coun
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
-                    className={`mt-8 sm:mt-16 px-8 py-4 rounded-full glass-badge flex items-center gap-4 ${time.isCritical ? 'border-red-500/30' :
-                        time.isUrgent ? 'border-amber-500/30' :
+                    className={`mt-8 sm:mt-16 px-8 py-4 rounded-full glass-badge flex items-center gap-4 ${time.isCritical ? 'border-red-500/60' :
+                        time.isUrgent ? 'border-red-500/30' :
                             'border-emerald-500/20'
                         }`}
                 >
-                    <div className={`relative w-3 h-3 rounded-full ${time.isCritical ? 'bg-red-500' :
-                        time.isUrgent ? 'bg-amber-500' :
-                            'bg-emerald-400'
-                        }`}>
-                        {(time.isUrgent || time.isCritical) && (
+                    <div className={`relative w-3 h-3 rounded-full ${time.isUrgent ? 'bg-red-500' : 'bg-emerald-400'}`}>
+                        {time.isUrgent && (
                             <motion.div
                                 animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
-                                transition={{ duration: 2, repeat: Infinity }}
-                                className={`absolute inset-0 rounded-full ${time.isCritical ? 'bg-red-500' : 'bg-amber-500'
-                                    }`}
+                                transition={{ duration: flashDuration, repeat: Infinity }}
+                                className="absolute inset-0 rounded-full bg-red-500"
                             />
                         )}
                     </div>

@@ -34,6 +34,20 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [location]);
 
+  // The interval alone would leave the countdown parked at 00:00:00 for up to
+  // ZMANIM_REFRESH_MS after shkia, so also refresh just after it passes to
+  // roll the target over to tomorrow's shkia right away.
+  useEffect(() => {
+    if (!location || !zmanim) return;
+    const timeZone = tz(location.lat, location.lng);
+    const msUntilShkia = zmanim.shkia.getTime() - Date.now();
+    const timeout = setTimeout(() => {
+      const data = getZmanimData(location.lat, location.lng, timeZone);
+      if (data) setZmanim(data);
+    }, Math.max(0, msUntilShkia) + 1000);
+    return () => clearTimeout(timeout);
+  }, [location, zmanim]);
+
   const handleReset = () => {
     setLocation(null);
     setZmanim(null);
