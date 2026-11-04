@@ -21,7 +21,10 @@ export function reminderTitle(): string {
     return "Time to daven Shachris";
 }
 
-export function reminderBody(shkia: Date, timeZone: string, locationName: string, minutesBefore: number): string {
+// Says how long is actually left, not the chosen lead time: the page may be
+// opened (or the scheduler may run) partway into the window.
+export function reminderBody(shkia: Date, timeZone: string, locationName: string, now: Date): string {
     const at = shkia.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone });
-    return `Shkia in ${locationName} is at ${at}, about ${minutesBefore} minutes from now.`;
+    const minutesLeft = Math.max(1, Math.round((shkia.getTime() - now.getTime()) / 60000));
+    return `Shkia in ${locationName} is at ${at}, ${minutesLeft} ${minutesLeft === 1 ? "minute" : "minutes"} from now.`;
 }

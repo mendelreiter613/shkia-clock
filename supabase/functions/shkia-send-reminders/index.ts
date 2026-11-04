@@ -10,7 +10,29 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2.118.0";
 import webpush from "npm:web-push@3.6.7";
-import { getZmanimJson } from "npm:kosher-zmanim@0.9.0";
+import { getZmanimJson, TimeZone } from "npm:kosher-zmanim@0.9.0";
+
+// Same fix as src/lib/zmanim.ts: kosher-zmanim 0.9.0 flips the sign of the
+// standard offset for daylight-saving zones, which pushed Sydney and New
+// Zealand onto tomorrow's shkia so their reminders never came due.
+function utcOffsetMs(timeZone: string, at: Date): number {
+    const parts = Object.fromEntries(
+        new Intl.DateTimeFormat("en-US", {
+            timeZone, hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric",
+            hour: "numeric", minute: "numeric", second: "numeric",
+        }).formatToParts(at).map((p) => [p.type, p.value]),
+    );
+    const wallAsUtc = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second);
+    return wallAsUtc - at.getTime();
+}
+
+TimeZone.getRawOffset = (timeZoneId: string): number => {
+    const year = new Date().getUTCFullYear();
+    return Math.min(
+        utcOffsetMs(timeZoneId, new Date(Date.UTC(year, 0, 1))),
+        utcOffsetMs(timeZoneId, new Date(Date.UTC(year, 6, 1))),
+    );
+};
 
 interface SubscriptionRow {
     endpoint: string;
@@ -53,9 +75,10 @@ function isReminderDue(shkia: Date, now: Date, minutesBefore: number): boolean {
     return msLeft > 0 && msLeft <= minutesBefore * 60 * 1000;
 }
 
-function reminderBody(shkia: Date, timeZone: string, locationName: string, minutesBefore: number): string {
+function reminderBody(shkia: Date, timeZone: string, locationName: string, now: Date): string {
     const at = shkia.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone });
-    return `Shkia in ${locationName} is at ${at}, about ${minutesBefore} minutes from now.`;
+    const minutesLeft = Math.max(1, Math.round((shkia.getTime() - now.getTime()) / 60000));
+    return `Shkia in ${locationName} is at ${at}, ${minutesLeft} ${minutesLeft === 1 ? "minute" : "minutes"} from now.`;
 }
 
 function json(body: unknown, status = 200) {
@@ -91,7 +114,7 @@ Deno.serve(async (req) => {
                 { endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } },
                 JSON.stringify({
                     title: "Time to daven Shachris",
-                    body: reminderBody(shkia, row.time_zone, row.location_name, row.minutes_before),
+                    body: reminderBody(shkia, row.time_zone, row.location_name, now),
                     url: "/",
                 }),
                 // Past shkia the reminder is pointless, so don't let the push service hold it longer.

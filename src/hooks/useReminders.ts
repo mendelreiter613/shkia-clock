@@ -46,7 +46,7 @@ export function useReminders(location: ReminderLocation, zmanim: ZmanimData, now
         if (lastTabNotified.current === shkiaMs) return;
         lastTabNotified.current = shkiaMs;
         saveLastTabNotified(shkiaMs);
-        showLocalNotification(reminderTitle(), reminderBody(zmanim.shkia, zmanim.timeZone, location.name, prefs.minutes)).catch(() => {});
+        showLocalNotification(reminderTitle(), reminderBody(zmanim.shkia, zmanim.timeZone, location.name, now)).catch(() => {});
     }, [now, prefs.mode, prefs.minutes, zmanim, location.name]);
 
     // Push reminders live on the server with the location they were set up

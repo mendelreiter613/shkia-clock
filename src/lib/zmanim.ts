@@ -1,4 +1,30 @@
-import { getZmanimJson } from "kosher-zmanim";
+import { getZmanimJson, TimeZone } from "kosher-zmanim";
+
+// kosher-zmanim 0.9.0 gets the sign of the standard UTC offset wrong for any
+// zone with daylight saving (Sydney comes out as UTC-10, Auckland as UTC-12).
+// Its antimeridian check then thinks those places are 20+ hours off and
+// computes everything for the next day, so in Sydney and New Zealand the
+// countdown targeted tomorrow's shkia. Replace it with the correct value: the
+// standard offset is the smaller of the January and July offsets, in either
+// hemisphere. Mirrored in supabase/functions/shkia-send-reminders.
+function utcOffsetMs(timeZone: string, at: Date): number {
+    const parts = Object.fromEntries(
+        new Intl.DateTimeFormat("en-US", {
+            timeZone, hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric",
+            hour: "numeric", minute: "numeric", second: "numeric",
+        }).formatToParts(at).map((p) => [p.type, p.value]),
+    );
+    const wallAsUtc = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second);
+    return wallAsUtc - at.getTime();
+}
+
+TimeZone.getRawOffset = (timeZoneId: string): number => {
+    const year = new Date().getUTCFullYear();
+    return Math.min(
+        utcOffsetMs(timeZoneId, new Date(Date.UTC(year, 0, 1))),
+        utcOffsetMs(timeZoneId, new Date(Date.UTC(year, 6, 1))),
+    );
+};
 
 export interface ZmanimData {
     shkia: Date;           // Next sunset (Countdown target)
