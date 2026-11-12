@@ -6,6 +6,9 @@ import { ZmanimData } from "@/lib/zmanim";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useReminders } from "@/hooks/useReminders";
 import ReminderPanel from "./ReminderPanel";
+import StreakPanel from "./StreakPanel";
+import { Celebration, MinchaButton, StreakPill } from "./StreakWidgets";
+import { useStreak } from "@/hooks/useStreak";
 
 // % of viewport height the ocean band occupies, measured from the bottom.
 // The sun/moon arc is anchored to this so it visually rises out of / sinks
@@ -106,6 +109,8 @@ export default function CountdownDisplay({ zmanim, locationName, lat, lng, onRes
     const [showReminders, setShowReminders] = useState(false);
     const reduceMotion = useReducedMotion();
     const reminders = useReminders({ lat, lng, name: locationName }, zmanim, now);
+    const streak = useStreak(zmanim, now);
+    const [showStreak, setShowStreak] = useState(false);
 
     // Lazy initializer: generated once per mount so stars don't reshuffle on every 1s tick.
     const [stars] = useState<Star[]>(() => Array.from({ length: 50 }, () => ({
@@ -400,6 +405,8 @@ export default function CountdownDisplay({ zmanim, locationName, lat, lng, onRes
                 </motion.div>
 
                 <div className="flex items-center gap-3">
+                    <StreakPill streak={streak} onClick={() => setShowStreak(true)} />
+
                     <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
@@ -531,6 +538,8 @@ export default function CountdownDisplay({ zmanim, locationName, lat, lng, onRes
                     </span>
                 </motion.div>
 
+                <MinchaButton streak={streak} timeZone={timeZone} urgent={time.isUrgent} />
+
             </div>
 
             {/* Footer Info Bar */}
@@ -581,6 +590,14 @@ export default function CountdownDisplay({ zmanim, locationName, lat, lng, onRes
                     <ReminderPanel reminders={reminders} locationName={locationName} onClose={() => setShowReminders(false)} />
                 )}
             </AnimatePresence>
+
+            <AnimatePresence>
+                {showStreak && (
+                    <StreakPanel streak={streak} timeZone={timeZone} onClose={() => setShowStreak(false)} />
+                )}
+            </AnimatePresence>
+
+            <Celebration streak={streak} />
         </div>
     );
 }
