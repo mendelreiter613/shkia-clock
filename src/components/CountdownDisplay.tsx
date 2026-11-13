@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, MapPin, Sunrise, Sunset, Clock, Bell } from "lucide-react";
+import { Search, MapPin, Sunrise, Sunset, Clock, Bell, Gamepad2 } from "lucide-react";
 import { ZmanimData } from "@/lib/zmanim";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useReminders } from "@/hooks/useReminders";
 import ReminderPanel from "./ReminderPanel";
+import GamesPanel, { GameId } from "./games/GamesPanel";
+import RaceTheSun from "./games/RaceTheSun";
+import WakeUpDash from "./games/WakeUpDash";
 
 // % of viewport height the ocean band occupies, measured from the bottom.
 // The sun/moon arc is anchored to this so it visually rises out of / sinks
@@ -104,6 +107,8 @@ export default function CountdownDisplay({ zmanim, locationName, lat, lng, onRes
     const [now, setNow] = useState(new Date());
     const [mounted, setMounted] = useState(false);
     const [showReminders, setShowReminders] = useState(false);
+    const [showGames, setShowGames] = useState(false);
+    const [activeGame, setActiveGame] = useState<GameId | null>(null);
     const reduceMotion = useReducedMotion();
     const reminders = useReminders({ lat, lng, name: locationName }, zmanim, now);
 
@@ -391,15 +396,26 @@ export default function CountdownDisplay({ zmanim, locationName, lat, lng, onRes
             >
                 <motion.div
                     whileHover={{ scale: 1.05 }}
-                    className="flex items-center gap-3 glass-badge px-5 py-3 rounded-full cursor-default"
+                    className="flex items-center gap-3 glass-badge px-5 py-3 rounded-full cursor-default min-w-0 mr-3"
                 >
-                    <MapPin size={16} className="text-blue-400" />
-                    <span className="text-sm font-semibold tracking-wide text-white/90">
+                    <MapPin size={16} className="text-blue-400 shrink-0" />
+                    <span className="text-sm font-semibold tracking-wide text-white/90 truncate">
                         {locationName}
                     </span>
                 </motion.div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 shrink-0">
+                    <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => setShowGames(true)}
+                        className="p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all backdrop-blur-xl"
+                        title="Shkia games"
+                        aria-label="Shkia games"
+                    >
+                        <Gamepad2 size={20} className="text-white/70" />
+                    </motion.button>
+
                     <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
@@ -580,6 +596,20 @@ export default function CountdownDisplay({ zmanim, locationName, lat, lng, onRes
                 {showReminders && (
                     <ReminderPanel reminders={reminders} locationName={locationName} onClose={() => setShowReminders(false)} />
                 )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {showGames && (
+                    <GamesPanel
+                        onClose={() => setShowGames(false)}
+                        onPick={(id) => { setShowGames(false); setActiveGame(id); }}
+                    />
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {activeGame === "race-the-sun" && <RaceTheSun key="race" zmanim={zmanim} onExit={() => setActiveGame(null)} />}
+                {activeGame === "wake-up-dash" && <WakeUpDash key="dash" zmanim={zmanim} onExit={() => setActiveGame(null)} />}
             </AnimatePresence>
         </div>
     );
