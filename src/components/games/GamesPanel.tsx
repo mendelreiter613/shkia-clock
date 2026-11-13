@@ -12,7 +12,7 @@ const GAMES: { id: GameId; emoji: string; name: string; blurb: string; bestLabel
         id: "race-the-sun",
         emoji: "🏃‍♂️",
         name: "Race the Sun",
-        blurb: "Run to shul before the sun sets. Jump the distractions, grab coffee.",
+        blurb: "Run to shul before the sun sets. Jump, slide and smash through distractions.",
         bestLabel: (s) => `Best: ${s.toFixed(1)}s of sun to spare`,
     },
     {
