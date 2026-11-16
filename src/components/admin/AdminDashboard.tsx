@@ -145,7 +145,9 @@ export default function AdminDashboard() {
     };
 
     return (
-        <div className="min-h-[100dvh] w-full bg-slate-950 text-white overflow-x-hidden">
+        // The clock page locks body scrolling (globals.css), so the admin page
+        // scrolls inside its own full-screen container instead.
+        <div className="fixed inset-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-slate-950 text-white">
             {status === "loading" && <Centered><Loader2 className="w-6 h-6 animate-spin text-white/50" /></Centered>}
             {status === "error" && (
                 <Centered>
