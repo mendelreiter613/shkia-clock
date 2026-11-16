@@ -1,10 +1,8 @@
 import "server-only";
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { rpc } from "@/lib/supabaseServer";
 
-// The Supabase project is shared with other apps, so this server holds no
-// Supabase secret at all: it uses the public key, which can only call the two
-// shkia_* functions below. Sending happens inside Supabase (edge function
-// shkia-send-reminders), where the push keys live. See supabase/migrations.
+// Sending happens inside Supabase (edge function shkia-send-reminders), where
+// the push keys live. This server only adds and removes subscriptions.
 
 export interface NewSubscription {
     endpoint: string;
@@ -17,30 +15,8 @@ export interface NewSubscription {
     minutesBefore: number;
 }
 
-function requireEnv(name: string): string {
-    const value = process.env[name];
-    if (!value) throw new Error(`Missing environment variable ${name}`);
-    return value;
-}
-
-let supabase: SupabaseClient | null = null;
-
-function db(): SupabaseClient {
-    if (!supabase) {
-        supabase = createClient(requireEnv("SUPABASE_URL"), requireEnv("SUPABASE_PUBLISHABLE_KEY"), {
-            auth: { persistSession: false },
-        });
-    }
-    return supabase;
-}
-
-async function call(fn: string, args: Record<string, unknown>) {
-    const { error } = await db().rpc(fn, args);
-    if (error) throw new Error(`${fn} failed: ${error.message}`);
-}
-
-export function upsertSubscription(s: NewSubscription) {
-    return call("shkia_upsert_subscription", {
+export async function upsertSubscription(s: NewSubscription) {
+    await rpc("shkia_upsert_subscription", {
         p_endpoint: s.endpoint,
         p_p256dh: s.p256dh,
         p_auth: s.auth,
@@ -52,6 +28,6 @@ export function upsertSubscription(s: NewSubscription) {
     });
 }
 
-export function deleteSubscription(endpoint: string) {
-    return call("shkia_delete_subscription", { p_endpoint: endpoint });
+export async function deleteSubscription(endpoint: string) {
+    await rpc("shkia_delete_subscription", { p_endpoint: endpoint });
 }

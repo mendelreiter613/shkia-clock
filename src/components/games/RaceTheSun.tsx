@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Coffee, Flame, Star, Sun, TriangleAlert } from "lucide-react";
 import { ZmanimData } from "@/lib/zmanim";
 import { gameSeconds, getGameClock, readBest, writeBest } from "@/lib/games";
+import { track } from "@/lib/analytics";
 import { GameShell } from "./GameShell";
 import {
     BUBBLE_MESSAGES, UI_FONT, bubbleWidth, clamp01, drawBarrier, drawBubble, drawCity, drawClock, drawClouds,
@@ -197,6 +198,7 @@ export default function RaceTheSun({ zmanim, onExit }: { zmanim: ZmanimData; onE
         setToast(null);
         phaseRef.current = "countdown";
         setPhase("countdown");
+        track({ event: "game_start", game: "race-the-sun" });
     }, [zmanim]);
 
     // ---- canvas sizing: fill the whole area, extra height becomes sky
@@ -261,6 +263,7 @@ export default function RaceTheSun({ zmanim, onExit }: { zmanim: ZmanimData; onE
             const newBest = won && (prev === null || sunLeft > prev);
             if (newBest) writeBest("race-the-sun", Math.round(sunLeft * 10) / 10);
             const share = sunLeft / w.budget;
+            track({ event: "game_end", game: "race-the-sun", won, score: won ? Math.round(sunLeft * 10) / 10 : 0 });
             phaseRef.current = won ? "won" : "lost";
             w.holding = false;
             setResult({

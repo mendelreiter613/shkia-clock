@@ -6,6 +6,7 @@ import CountdownDisplay from "@/components/CountdownDisplay";
 import { getZmanimData, ZmanimData } from "@/lib/zmanim";
 import { AnimatePresence, motion } from "framer-motion";
 import tz from "tz-lookup";
+import { track } from "@/lib/analytics";
 
 // How often to recompute zmanim for the current location. The countdown
 // target and sun-position background are only as fresh as this data, so a
@@ -17,7 +18,12 @@ export default function Home() {
   const [location, setLocation] = useState<{ lat: number, lng: number, name: string } | null>(null);
   const [zmanim, setZmanim] = useState<ZmanimData | null>(null);
 
+  useEffect(() => {
+    track({ event: "visit" });
+  }, []);
+
   const handleLocationFound = (lat: number, lng: number, name: string) => {
+    track({ event: "location_set", locationName: name });
     setLocation({ lat, lng, name });
     const timeZone = tz(lat, lng);
     const data = getZmanimData(lat, lng, timeZone);

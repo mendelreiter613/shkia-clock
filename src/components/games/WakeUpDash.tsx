@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ZmanimData } from "@/lib/zmanim";
 import { gameSeconds, getGameClock, readBest, writeBest } from "@/lib/games";
+import { track } from "@/lib/analytics";
 import { GameMessage, GameShell, PrimaryButton, SecondaryButton } from "./GameShell";
 
 // Things popping up around the bed. Smack what keeps you lying there, grab
@@ -75,6 +76,7 @@ export default function WakeUpDash({ zmanim, onExit }: { zmanim: ZmanimData; onE
         const prev = readBest("wake-up-dash");
         const newBest = won && (prev === null || secondsLeft > prev);
         if (newBest) writeBest("wake-up-dash", Math.round(secondsLeft * 10) / 10);
+        track({ event: "game_end", game: "wake-up-dash", won, score: won ? Math.round(secondsLeft * 10) / 10 : 0 });
         phaseRef.current = won ? "won" : "lost";
         itemsRef.current = [];
         setItems([]);
@@ -98,6 +100,7 @@ export default function WakeUpDash({ zmanim, onExit }: { zmanim: ZmanimData; onE
         setResult(null);
         phaseRef.current = "playing";
         setPhase("playing");
+        track({ event: "game_start", game: "wake-up-dash" });
     }, [zmanim]);
 
     // Game tick: drowsiness, spawning, expiring and the clock.

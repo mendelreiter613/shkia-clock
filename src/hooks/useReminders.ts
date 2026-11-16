@@ -17,6 +17,7 @@ import {
     subscribePush,
     unsubscribePush,
 } from "@/lib/pushClient";
+import { track } from "@/lib/analytics";
 
 const BLOCKED_MESSAGE = "Notifications are blocked for this site. Allow them in your browser's site settings, then try again.";
 
@@ -85,17 +86,20 @@ export function useReminders(location: ReminderLocation, zmanim: ZmanimData, now
         await ensurePermission();
         if (prefs.mode === "push") await unsubscribePush();
         setPrefs({ mode: "tab", minutes: prefs.minutes });
+        track({ event: "reminder_on", mode: "tab", minutes: prefs.minutes });
     });
 
     const enablePush = () => run(async () => {
         await ensurePermission();
         await subscribePush(location, prefs.minutes);
         setPrefs({ mode: "push", minutes: prefs.minutes, pushLocationKey: currentKey });
+        track({ event: "reminder_on", mode: "push", minutes: prefs.minutes });
     });
 
     const disable = () => run(async () => {
         if (prefs.mode === "push") await unsubscribePush();
         setPrefs({ mode: "off", minutes: prefs.minutes });
+        track({ event: "reminder_off" });
     });
 
     const setMinutes = (minutes: ReminderMinutes) => run(async () => {

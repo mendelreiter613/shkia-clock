@@ -58,3 +58,24 @@ select cron.schedule('shkia-shachris-reminders', '*/5 * * * *', $$
   );
 $$);
 ```
+
+## Analytics dashboard (/admin)
+
+https://www.shkiatrusher.com/admin shows visitors, countries and cities,
+devices, where people came from, game plays and scores, reminders, busiest
+hours and recent activity.
+
+- The site sends anonymous events to `/api/track`, which calls
+  `shkia_track_event`. No IP is stored: the place comes from Vercel's geo
+  headers, and a visitor is a random id the browser makes for itself. A device
+  that signed in to /admin stops being counted (switch at the bottom of the page).
+- Data lives in `public.shkia_events` (same shared Supabase project, same
+  locked-down `shkia_` pattern). Admin sessions are `public.shkia_admin_sessions`
+  (hashed tokens, 30 days), wrong passwords are `public.shkia_admin_failures`
+  (10 wrong tries in 15 minutes locks login for 15 minutes).
+- Set or change the admin password in the Supabase SQL editor. It's stored as a
+  bcrypt hash in `shkia_settings`, and changing it signs everyone out:
+
+```sql
+select public.shkia_admin_set_password('your new password');
+```
