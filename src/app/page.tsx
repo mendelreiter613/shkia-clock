@@ -14,20 +14,60 @@ import { track } from "@/lib/analytics";
 // refreshed periodically to keep both live and accurate.
 const ZMANIM_REFRESH_MS = 10 * 60 * 1000;
 
+// The last location picked, so the clock comes back after a reload or a trip
+// to /stats instead of asking again. Only kept in this browser.
+const LOCATION_KEY = "shkia-location";
+
+type SavedLocation = { lat: number, lng: number, name: string };
+
+function loadLocation(): SavedLocation | null {
+  try {
+    const v = JSON.parse(localStorage.getItem(LOCATION_KEY) ?? "null");
+    if (v && Number.isFinite(v.lat) && Number.isFinite(v.lng) && typeof v.name === "string") {
+      return { lat: v.lat, lng: v.lng, name: v.name };
+    }
+  } catch { /* storage blocked or bad JSON: just ask again */ }
+  return null;
+}
+
+function saveLocation(loc: SavedLocation | null) {
+  try {
+    if (loc) localStorage.setItem(LOCATION_KEY, JSON.stringify(loc));
+    else localStorage.removeItem(LOCATION_KEY);
+  } catch { /* storage blocked: nothing to remember */ }
+}
+
 export default function Home() {
   const [location, setLocation] = useState<{ lat: number, lng: number, name: string } | null>(null);
   const [zmanim, setZmanim] = useState<ZmanimData | null>(null);
+  // False until the saved location has been checked, so the city picker
+  // doesn't flash up before a remembered city loads.
+  const [restored, setRestored] = useState(false);
+
+  const showLocation = (loc: SavedLocation) => {
+    setLocation(loc);
+    setZmanim(getZmanimData(loc.lat, loc.lng, tz(loc.lat, loc.lng)));
+  };
 
   useEffect(() => {
     track({ event: "visit" });
+    // Read storage after mount, not during render, so SSR and the first client render agree.
+    const saved = loadLocation();
+    if (saved) {
+      try {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration guard, as above
+        showLocation(saved);
+      } catch {
+        saveLocation(null);
+      }
+    }
+    setRestored(true);
   }, []);
 
   const handleLocationFound = (lat: number, lng: number, name: string) => {
     track({ event: "location_set", locationName: name });
-    setLocation({ lat, lng, name });
-    const timeZone = tz(lat, lng);
-    const data = getZmanimData(lat, lng, timeZone);
-    setZmanim(data);
+    saveLocation({ lat, lng, name });
+    showLocation({ lat, lng, name });
   };
 
   useEffect(() => {
@@ -55,6 +95,7 @@ export default function Home() {
   }, [location, zmanim]);
 
   const handleReset = () => {
+    saveLocation(null);
     setLocation(null);
     setZmanim(null);
   };
@@ -63,7 +104,7 @@ export default function Home() {
     // FIXED: h-[100dvh] prevents mobile cutoff
     <main className="h-[100dvh] w-full bg-deep-atmosphere relative selection:bg-white/20 overflow-hidden">
       <AnimatePresence mode="wait">
-        {location && zmanim ? (
+        {!restored ? null : location && zmanim ? (
           <motion.div
             key="countdown"
             initial={{ opacity: 0, scale: 0.98 }}

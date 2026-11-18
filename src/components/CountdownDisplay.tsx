@@ -388,15 +388,16 @@ export default function CountdownDisplay({ zmanim, locationName, lat, lng, onRes
                 )}
             </AnimatePresence>
 
-            {/* Header */}
+            {/* Header: on phones the location gets its own row above the buttons,
+                so the name isn't squeezed down to a few letters. */}
             <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="w-full flex justify-between items-start z-30 p-8"
+                className="w-full flex flex-col items-center gap-3 sm:flex-row sm:justify-between sm:items-start z-30 px-4 pt-6 pb-2 sm:p-8"
             >
                 <motion.div
                     whileHover={{ scale: 1.05 }}
-                    className="flex items-center gap-3 glass-badge px-5 py-3 rounded-full cursor-default min-w-0 mr-3"
+                    className="flex items-center gap-3 glass-badge px-5 py-3 rounded-full cursor-default min-w-0 max-w-full sm:mr-3"
                 >
                     <MapPin size={16} className="text-blue-400 shrink-0" />
                     <span className="text-sm font-semibold tracking-wide text-white/90 truncate">
