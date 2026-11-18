@@ -107,7 +107,10 @@ function describe(r: RecentRow): string {
 
 type Status = "loading" | "signed-out" | "ready" | "error";
 
-export default function AdminDashboard() {
+// "admin" (/admin) needs the password and includes the recent-activity feed;
+// "public" (/stats) is open to everyone and leaves that feed out.
+export default function AdminDashboard({ mode = "admin" }: { mode?: "admin" | "public" }) {
+    const isAdmin = mode === "admin";
     const [status, setStatus] = useState<Status>("loading");
     const [stats, setStats] = useState<Stats | null>(null);
     const [days, setDays] = useState(30);
@@ -117,8 +120,9 @@ export default function AdminDashboard() {
         setRefreshing(true);
         try {
             const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            const res = await fetch(`/api/admin/stats?days=${d}&tz=${encodeURIComponent(tz)}`, { cache: "no-store" });
-            if (res.status === 401) {
+            const endpoint = isAdmin ? "/api/admin/stats" : "/api/stats";
+            const res = await fetch(`${endpoint}?days=${d}&tz=${encodeURIComponent(tz)}`, isAdmin ? { cache: "no-store" } : {});
+            if (isAdmin && res.status === 401) {
                 setStatus("signed-out");
                 return;
             }
@@ -130,7 +134,7 @@ export default function AdminDashboard() {
         } finally {
             setRefreshing(false);
         }
-    }, []);
+    }, [isAdmin]);
 
     useEffect(() => {
         load(days);
@@ -163,7 +167,7 @@ export default function AdminDashboard() {
                     onDays={setDays}
                     refreshing={refreshing}
                     onRefresh={() => load(days)}
-                    onSignOut={signOut}
+                    onSignOut={isAdmin ? signOut : undefined}
                 />
             )}
         </div>
@@ -251,7 +255,8 @@ interface DashboardProps {
     onDays: (d: number) => void;
     refreshing: boolean;
     onRefresh: () => void;
-    onSignOut: () => void;
+    /** Only on /admin; the public page has no sign-out, activity feed or device switch. */
+    onSignOut?: () => void;
 }
 
 function Dashboard({ stats, days, onDays, refreshing, onRefresh, onSignOut }: DashboardProps) {
@@ -287,9 +292,11 @@ function Dashboard({ stats, days, onDays, refreshing, onRefresh, onSignOut }: Da
                     <button onClick={onRefresh} className="p-2 rounded-full hover:bg-white/10" aria-label="Refresh" title="Refresh">
                         <RefreshCw className={`w-4 h-4 text-white/70 ${refreshing ? "animate-spin" : ""}`} />
                     </button>
-                    <button onClick={onSignOut} className="p-2 rounded-full hover:bg-white/10" aria-label="Sign out" title="Sign out">
-                        <LogOut className="w-4 h-4 text-white/70" />
-                    </button>
+                    {onSignOut && (
+                        <button onClick={onSignOut} className="p-2 rounded-full hover:bg-white/10" aria-label="Sign out" title="Sign out">
+                            <LogOut className="w-4 h-4 text-white/70" />
+                        </button>
+                    )}
                 </div>
             </header>
 
@@ -397,7 +404,7 @@ function Dashboard({ stats, days, onDays, refreshing, onRefresh, onSignOut }: Da
                 </Card>
             </div>
 
-            <Card title="Recent activity" className="mt-4" note="latest 40, any date">
+            {onSignOut && <Card title="Recent activity" className="mt-4" note="latest 40, any date">
                 {stats.recent.length === 0 ? (
                     <p className="text-sm text-white/40">Nothing yet. Activity shows here as people use the site.</p>
                 ) : (
@@ -416,9 +423,9 @@ function Dashboard({ stats, days, onDays, refreshing, onRefresh, onSignOut }: Da
                         ))}
                     </ul>
                 )}
-            </Card>
+            </Card>}
 
-            <ThisDevice />
+            {onSignOut && <ThisDevice />}
         </div>
     );
 }

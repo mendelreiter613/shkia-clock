@@ -59,11 +59,16 @@ select cron.schedule('shkia-shachris-reminders', '*/5 * * * *', $$
 $$);
 ```
 
-## Analytics dashboard (/admin)
+## Analytics dashboard (/stats and /admin)
 
-https://www.shkiatrusher.com/admin shows visitors, countries and cities,
-devices, where people came from, game plays and scores, reminders, busiest
-hours and recent activity.
+https://www.shkiatrusher.com/stats is open to everyone, no sign-in. It shows
+visitors, countries and cities, devices, where people came from, game plays
+and scores, reminders and busiest hours. It calls `shkia_public_stats`
+through `/api/stats`, which Vercel's CDN caches for a minute.
+
+https://www.shkiatrusher.com/admin is the same dashboard behind the password,
+plus the recent-activity feed (single visitors' events, city and visitor id),
+which the public page leaves out.
 
 - The site sends anonymous events to `/api/track`, which calls
   `shkia_track_event`. No IP is stored: the place comes from Vercel's geo
