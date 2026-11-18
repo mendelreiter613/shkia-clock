@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, MapPin, Sunrise, Sunset, Clock, Bell, Gamepad2, BarChart3 } from "lucide-react";
+import { Search, MapPin, Sunrise, Sunset, Clock, Bell, Gamepad2, BarChart3, Monitor, MonitorCheck } from "lucide-react";
 import { ZmanimData } from "@/lib/zmanim";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useReminders } from "@/hooks/useReminders";
+import { useWakeLock } from "@/hooks/useWakeLock";
 import ReminderPanel from "./ReminderPanel";
 import GamesPanel, { GameId } from "./games/GamesPanel";
 import RaceTheSun from "./games/RaceTheSun";
@@ -111,6 +112,27 @@ export default function CountdownDisplay({ zmanim, locationName, lat, lng, onRes
     const [activeGame, setActiveGame] = useState<GameId | null>(null);
     const reduceMotion = useReducedMotion();
     const reminders = useReminders({ lat, lng, name: locationName }, zmanim, now);
+    const keepScreenOn = useWakeLock();
+    // Short note shown after tapping "Keep screen on", so it's clear what changed.
+    const [screenNote, setScreenNote] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!screenNote) return;
+        const t = setTimeout(() => setScreenNote(null), 2500);
+        return () => clearTimeout(t);
+    }, [screenNote]);
+
+    const toggleKeepScreenOn = () => {
+        if (!keepScreenOn.supported) {
+            setScreenNote("This browser can't keep the screen on");
+            return;
+        }
+        setScreenNote(keepScreenOn.enabled ? "Screen can turn off again" : "Screen will stay on");
+        keepScreenOn.toggle();
+    };
+    // If the browser refuses (battery saver, permissions), say so instead of "will stay on".
+    const screenBlocked = keepScreenOn.enabled && keepScreenOn.blocked;
+    const shownScreenNote = screenNote && screenBlocked ? "This browser won't let the screen stay on" : screenNote;
 
     // Lazy initializer: generated once per mount so stars don't reshuffle on every 1s tick.
     const [stars] = useState<Star[]>(() => Array.from({ length: 50 }, () => ({
@@ -443,6 +465,25 @@ export default function CountdownDisplay({ zmanim, locationName, lat, lng, onRes
                     </motion.button>
 
                     <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={toggleKeepScreenOn}
+                        className={`relative p-3 rounded-full border transition-all backdrop-blur-xl ${screenBlocked
+                            ? "bg-amber-400/15 border-amber-300/30 hover:bg-amber-400/20"
+                            : keepScreenOn.enabled
+                            ? "bg-emerald-400/15 border-emerald-300/30 hover:bg-emerald-400/20"
+                            : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20"}`}
+                        title={screenBlocked ? "Keep screen on: this browser won't allow it"
+                            : keepScreenOn.enabled ? "Keep screen on: on" : "Keep screen on: off"}
+                        aria-label="Keep screen on"
+                        aria-pressed={keepScreenOn.enabled}
+                    >
+                        {keepScreenOn.enabled
+                            ? <MonitorCheck size={20} className={screenBlocked ? "text-amber-200" : "text-emerald-200"} />
+                            : <Monitor size={20} className="text-white/70" />}
+                    </motion.button>
+
+                    <motion.button
                         whileHover={{ scale: 1.1, rotate: 90 }}
                         whileTap={{ scale: 0.9 }}
                         onClick={onReset}
@@ -453,6 +494,21 @@ export default function CountdownDisplay({ zmanim, locationName, lat, lng, onRes
                     </motion.button>
                 </div>
             </motion.div>
+
+            <AnimatePresence>
+                {shownScreenNote && (
+                    <motion.div
+                        key={shownScreenNote}
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        role="status"
+                        className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-slate-950/80 border border-white/15 backdrop-blur-xl text-sm text-white/90 whitespace-nowrap shadow-lg"
+                    >
+                        {shownScreenNote}
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Main Clock Display */}
             <div className="flex-1 flex flex-col items-center justify-center z-30 px-6">
