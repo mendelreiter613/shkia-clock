@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, MapPin, Sunrise, Sunset, Clock, Bell, Gamepad2 } from "lucide-react";
+import { Search, MapPin, Sunrise, Sunset, Clock, Bell, Gamepad2, BarChart3 } from "lucide-react";
 import { ZmanimData } from "@/lib/zmanim";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useReminders } from "@/hooks/useReminders";
@@ -405,6 +405,17 @@ export default function CountdownDisplay({ zmanim, locationName, lat, lng, onRes
                 </motion.div>
 
                 <div className="flex items-center gap-3 shrink-0">
+                    <motion.a
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        href="/stats"
+                        className="p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all backdrop-blur-xl"
+                        title="Shkia Trusher stats"
+                        aria-label="Shkia Trusher stats"
+                    >
+                        <BarChart3 size={20} className="text-white/70" />
+                    </motion.a>
+
                     <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}

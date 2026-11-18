@@ -1,8 +1,9 @@
 "use client";
 
 import { FormEvent, ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
-    Bell, Gamepad2, Globe2, Loader2, LogOut, MapPin, MonitorSmartphone, RefreshCw, Sun, Users,
+    ArrowLeft, Bell, Gamepad2, Globe2, Loader2, LogOut, MapPin, MonitorSmartphone, RefreshCw, Sun, Users,
 } from "lucide-react";
 import { isAdminDevice, setAdminDevice } from "@/lib/analytics";
 
@@ -273,6 +274,11 @@ function Dashboard({ stats, days, onDays, refreshing, onRefresh, onSignOut }: Da
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
             <header className="flex flex-wrap items-center justify-between gap-3 mb-6">
                 <div className="flex items-center gap-3 min-w-0">
+                    {!onSignOut && (
+                        <Link href="/" className="p-2 -ml-2 rounded-full hover:bg-white/10 shrink-0" aria-label="Back to the clock" title="Back to the clock">
+                            <ArrowLeft className="w-5 h-5 text-white/70" />
+                        </Link>
+                    )}
                     <div className="p-2 rounded-xl bg-amber-500/15 shrink-0"><Sun className="w-5 h-5 text-amber-300" /></div>
                     <div className="min-w-0">
                         <h1 className="text-xl font-semibold leading-tight">Shkia Trusher analytics</h1>
